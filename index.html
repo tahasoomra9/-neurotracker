@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NeuroTracker: AI Goal Achievement</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&family=Oxanium:wght@600&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      /* ==========================================================================
+         Zenith Design System: CSS Variables
+         ========================================================================== */
+      :root { /* Dark Theme (Default) */
+        --background: hsl(0, 0%, 0%); /* surface-0 */
+        --foreground: hsl(210, 40%, 98%); /* text-primary */
+        
+        --card: hsl(0, 0%, 7%); /* surface-1 */
+        --popover: hsl(0, 0%, 7%);
+
+        --primary: hsl(0, 0%, 100%); /* White button */
+        --primary-foreground: hsl(222, 47%, 11%); /* Black text */
+
+        --brand: hsl(260, 85%, 65%);
+        --brand-foreground: hsl(210, 40%, 98%);
+
+        --secondary: hsl(0, 0%, 12%);
+        --secondary-foreground: hsl(210, 40%, 98%);
+        
+        --muted: hsl(0, 0%, 10%);
+        --muted-foreground: hsl(215, 20%, 65%);
+        
+        --accent: hsl(0, 0%, 12%);
+        --accent-foreground: hsl(210, 40%, 98%);
+        
+        --destructive: hsl(0, 72%, 51%);
+        --destructive-foreground: hsl(210, 40%, 98%);
+        
+        --border: hsl(0, 0%, 15%);
+        --border-glass: hsl(0, 0%, 100%, 0.1);
+        --input: hsl(0, 0%, 15%);
+        --ring: hsl(260, 85%, 70%);
+
+        --success: hsl(142, 71%, 45%);
+        --warning: hsl(48, 96%, 53%);
+        
+        /* Chart Colors */
+        --chart-1: hsl(260, 85%, 65%);
+        --chart-2: hsl(173, 80%, 40%);
+        --chart-3: hsl(330, 70%, 55%);
+        --chart-4: hsl(29, 90%, 60%);
+        --chart-5: hsl(198, 93%, 60%);
+        --chart-6: hsl(210, 80%, 65%);
+      }
+
+      .light { /* Light Theme */
+        --background: hsl(210, 40%, 98%); /* surface-0 */
+        --foreground: hsl(222, 47%, 11%); /* text-primary */
+
+        --card: hsl(0, 0%, 100%); /* surface-1 */
+        --popover: hsl(0, 0%, 100%);
+
+        --primary: hsl(222, 47%, 11%); /* Black button */
+        --primary-foreground: hsl(0, 0%, 100%); /* White text */
+        
+        --brand: hsl(260, 75%, 60%);
+        --brand-foreground: hsl(0, 0%, 100%);
+
+        --secondary: hsl(210, 40%, 94%);
+        --secondary-foreground: hsl(222, 47%, 11%);
+
+        --muted: hsl(210, 40%, 94%);
+        --muted-foreground: hsl(215, 20%, 65%);
+
+        --accent: hsl(210, 40%, 90%);
+        --accent-foreground: hsl(222, 47%, 11%);
+
+        --destructive: hsl(0, 84%, 60%);
+        --destructive-foreground: hsl(210, 40%, 98%);
+        
+        --border: hsl(210, 40%, 90%);
+        --border-glass: hsl(0, 0%, 0%, 0.1);
+        --input: hsl(210, 40%, 90%);
+        --ring: hsl(260, 85%, 55%);
+
+        --success: hsl(142, 61%, 40%);
+        --warning: hsl(38, 92%, 56%);
+        
+        /* Chart Colors */
+        --chart-1: hsl(260, 75%, 60%);
+        --chart-2: hsl(173, 70%, 40%);
+        --chart-3: hsl(330, 65%, 55%);
+        --chart-4: hsl(29, 85%, 58%);
+        --chart-5: hsl(198, 83%, 55%);
+        --chart-6: hsl(210, 70%, 60%);
+      }
+
+      /* Animations */
+      @keyframes modal-in {
+        from {
+          opacity: 0;
+          transform: scale(0.95) translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1) translateY(0);
+        }
+      }
+      .animate-modal-in {
+        animation: modal-in 0.3s ease-out forwards;
+      }
+
+      /* Accessibility: Reduced Motion */
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+          scroll-behavior: auto !important;
+        }
+      }
+      
+      /* Premium Glassmorphism Theme */
+      .premium-glass {
+        position: relative;
+        background: hsl(var(--card) / 0.6);
+        -webkit-backdrop-filter: blur(16px);
+        backdrop-filter: blur(16px);
+        border: 1px solid var(--border-glass);
+        border-radius: 0.75rem; /* lg */
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+        transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+        overflow: hidden;
+      }
+
+      .premium-glass::before {
+        content: '';
+        position: absolute;
+        top: 0; right: 0; bottom: 0; left: 0;
+        border-radius: inherit;
+        background: radial-gradient(80% 80% at 50% 50%, transparent, hsl(var(--card) / 0.3));
+        pointer-events: none;
+      }
+      
+      .premium-glass:hover {
+        border-color: hsl(var(--foreground) / 0.2);
+      }
+
+      .premium-header {
+        background: hsl(var(--background) / 0.7);
+        -webkit-backdrop-filter: blur(12px);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--border-glass);
+      }
+      
+      .premium-modal-content {
+        background: hsl(var(--card) / 0.7);
+        -webkit-backdrop-filter: blur(16px);
+        backdrop-filter: blur(16px);
+        border: 1px solid var(--border-glass);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+      }
+
+      /* Premium Button Style */
+      .button-primary-glow {
+        background-color: var(--primary);
+        color: var(--primary-foreground);
+        position: relative;
+        overflow: hidden;
+        transition: transform 0.2s ease, background-color 0.2s ease;
+      }
+      .button-primary-glow:hover {
+        transform: translateY(-2px);
+      }
+       .button-primary-glow:active {
+        transform: translateY(0px) scale(0.98);
+      }
+      
+      /* Dark mode button hover */
+      :root .button-primary-glow:hover {
+        background-color: hsl(0, 0%, 92%); /* Slightly off-white */
+      }
+
+      /* Light mode button hover */
+      .light .button-primary-glow:hover {
+        background-color: hsl(222, 47%, 20%);
+      }
+
+
+      /* Utility */
+      .line-clamp-3 {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;  
+        overflow: hidden;
+      }
+
+    </style>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Poppins', 'sans-serif'],
+              heading: ['Montserrat', 'sans-serif'],
+              logo: ['Oxanium', 'sans-serif'],
+            },
+            colors: {
+              border: 'var(--border)',
+              input: 'var(--input)',
+              ring: 'var(--ring)',
+              background: 'var(--background)',
+              foreground: 'var(--foreground)',
+              brand: {
+                DEFAULT: 'var(--brand)',
+                foreground: 'var(--brand-foreground)',
+              },
+              primary: {
+                DEFAULT: 'var(--primary)',
+                foreground: 'var(--primary-foreground)',
+              },
+              secondary: {
+                DEFAULT: 'var(--secondary)',
+                foreground: 'var(--secondary-foreground)',
+              },
+              destructive: {
+                DEFAULT: 'var(--destructive)',
+                foreground: 'var(--destructive-foreground)',
+              },
+              muted: {
+                DEFAULT: 'var(--muted)',
+                foreground: 'var(--muted-foreground)',
+              },
+              accent: {
+                DEFAULT: 'var(--accent)',
+                foreground: 'var(--accent-foreground)',
+              },
+              popover: {
+                DEFAULT: 'var(--popover)',
+                foreground: 'var(--foreground)',
+              },
+              card: {
+                DEFAULT: 'var(--card)',
+                foreground: 'var(--foreground)',
+              },
+              success: {
+                DEFAULT: 'var(--success)',
+              },
+              warning: {
+                DEFAULT: 'var(--warning)',
+              }
+            },
+            borderRadius: {
+              'lg': '0.75rem',
+              'md': '0.5rem',
+              'sm': '0.25rem'
+            },
+            backdropBlur: {
+              'xl': '24px',
+            },
+            boxShadow: {
+              'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
+            }
+          }
+        }
+      }
+    </script>
+    <script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.1.1/",
+    "react": "https://aistudiocdn.com/react@^19.1.1",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.19.0"
+  }
+}
+</script>
+</head>
+  <body class="bg-background">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
