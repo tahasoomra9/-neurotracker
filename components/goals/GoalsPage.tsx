@@ -23,6 +23,7 @@ interface GoalsPageProps {
     onSetupPersonalGoal: (data: PersonalGoalSetupData) => Promise<void>;
     onAddTransaction: (transaction: NewTransaction) => void;
     onDeleteTransaction: (id: string) => void;
+    onTabChange?: (tab: 'financial' | 'personal') => void;
 }
 
 type GoalFilter = 'active' | 'paused' | 'completed' | 'all';
@@ -206,9 +207,17 @@ const GoalsPage: React.FC<GoalsPageProps> = ({
     onSetupFinancialGoal, 
     onSetupPersonalGoal,
     onAddTransaction,
-    onDeleteTransaction 
+    onDeleteTransaction,
+    onTabChange
 }) => {
     const [activeTab, setActiveTab] = useState<GoalType>('financial');
+
+    // Notify parent when tab changes
+    useEffect(() => {
+        if (onTabChange) {
+            onTabChange(activeTab);
+        }
+    }, [activeTab, onTabChange]);
     const [filter, setFilter] = useState<GoalFilter>('active');
     const [expandedGoalId, setExpandedGoalId] = useState<string | null>(null);
 

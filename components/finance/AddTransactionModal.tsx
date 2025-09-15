@@ -3,27 +3,41 @@ import { NewTransaction } from '../../types';
 import Button from '../common/Button';
 import Input from '../common/Input';
 import Modal from '../common/Modal';
+import Select from '../common/Select';
 
 interface AddTransactionModalProps {
   onComplete: (data: NewTransaction) => void;
   onClose: () => void;
 }
 
+const expenseCategories = [
+    'Food', 'Transport', 'Social', 'Utilities', 'Shopping', 'Health', 'Entertainment', 'Subscriptions', 'Housing', 'Other'
+];
+const incomeCategories = [
+    'Salary', 'Freelance', 'Investment', 'Gift', 'Other'
+];
+
+
 const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ onComplete, onClose }) => {
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState<number | ''>('');
   const [type, setType] = useState<'income' | 'expense'>('expense');
-  const [category, setCategory] = useState('');
+  const [category, setCategory] = useState(expenseCategories[0]);
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+
+  const handleTypeChange = (newType: 'income' | 'expense') => {
+      setType(newType);
+      setCategory(newType === 'expense' ? expenseCategories[0] : incomeCategories[0]);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (description.trim() && amount && category.trim()) {
+    if (description.trim() && amount && category) {
         onComplete({
             description: description.trim(),
             amount: Math.abs(Number(amount)),
             type,
-            category: category.trim(),
+            category,
             date,
         });
     }
@@ -66,14 +80,14 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ onComplete, o
                 <div className="flex gap-2">
                     <button
                         type="button"
-                        onClick={() => setType('expense')}
+                        onClick={() => handleTypeChange('expense')}
                         className={`flex-1 p-3 rounded-md border text-sm font-semibold transition-colors ${type === 'expense' ? 'bg-destructive/20 border-destructive text-destructive-foreground' : 'border-input hover:bg-accent'}`}
                     >
                         Expense
                     </button>
                      <button
                         type="button"
-                        onClick={() => setType('income')}
+                        onClick={() => handleTypeChange('income')}
                         className={`flex-1 p-3 rounded-md border text-sm font-semibold transition-colors ${type === 'income' ? 'bg-success/20 border-success text-success' : 'border-input hover:bg-accent'}`}
                     >
                         Income
@@ -81,14 +95,17 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ onComplete, o
                 </div>
             </div>
 
-            <Input 
+            <Select 
                 label="Category" 
                 name="category" 
                 value={category} 
                 onChange={(e) => setCategory(e.target.value)} 
-                placeholder="e.g., Food, Transport" 
                 required 
-            />
+            >
+                 {(type === 'expense' ? expenseCategories : incomeCategories).map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                ))}
+            </Select>
 
             <div className="flex items-center justify-end mt-6 space-x-4">
                 <Button type="button" onClick={onClose} variant="outline">Cancel</Button>

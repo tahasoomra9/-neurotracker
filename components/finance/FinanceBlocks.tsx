@@ -2,6 +2,11 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { FinancialGoal, Transaction } from '../../types';
 import Button from '../common/Button';
 import ProgressBar from '../common/ProgressBar';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
+import { Doughnut } from 'react-chartjs-2';
+
+// Register Chart.js components
+ChartJS.register(ArcElement, Tooltip, Legend);
 
 // ===================================
 // Block Container
@@ -27,13 +32,13 @@ export const MetricCard: React.FC<{ title: string; value: string; subtext?: stri
 export const ActiveGoalSummaryBlock: React.FC<{ goal: FinancialGoal | undefined }> = ({ goal }) => {
     if (!goal) {
         return (
-             <div className="premium-glass p-4 flex flex-col justify-center h-full text-center">
+            <div className="premium-glass p-4 flex flex-col justify-center h-full text-center">
                 <p className="text-muted-foreground">No active financial goal.</p>
                 <p className="text-xs text-muted-foreground/80 mt-1">Set a new goal to see your progress here.</p>
             </div>
         )
     }
-    
+
     const progress = goal.targetAmount > 0 ? (goal.currentAmount / goal.targetAmount) * 100 : 0;
 
     return (
@@ -92,7 +97,7 @@ const ActionMenu: React.FC<{
         ],
         completed: []
     };
-    
+
     const actions = status === 'active' ? menuItems.active : status === 'paused' ? menuItems.paused : [];
 
     return (
@@ -104,7 +109,7 @@ const ActionMenu: React.FC<{
                 <div className="absolute right-0 top-10 w-48 bg-popover rounded-md shadow-lg z-10 border border-border p-1 animate-modal-in">
                     {actions.map(item => (
                         <button key={item.action} onClick={() => { onAction(item.action as ActionType); setIsOpen(false); }} className="w-full flex items-center px-3 py-2 text-sm text-foreground hover:bg-accent rounded-md">
-                           {item.icon} {item.label}
+                            {item.icon} {item.label}
                         </button>
                     ))}
                     <div className="my-1 h-px bg-border" />
@@ -139,7 +144,7 @@ const GoalListItem: React.FC<{
     isSelected: boolean;
 }> = ({ goal, onAction, onClick, isSelected }) => {
     const progress = goal.targetAmount > 0 ? (goal.currentAmount / goal.targetAmount) * 100 : 0;
-    
+
     const handleLocalAction = (action: ActionType) => {
         if (action === 'resume') {
             onAction('resume', { ...goal, status: 'active' });
@@ -149,7 +154,7 @@ const GoalListItem: React.FC<{
     }
 
     return (
-        <div 
+        <div
             onClick={onClick}
             className={`bg-card/80 p-4 rounded-lg transition-all duration-300 animate-[modal-in_0.3s_ease-out_forwards] overflow-visible ${onClick ? 'cursor-pointer' : ''} ${isSelected ? 'ring-2 ring-brand ring-offset-2 ring-offset-background' : 'hover:bg-card'}`}
         >
@@ -175,9 +180,8 @@ const GoalListItem: React.FC<{
 const FilterTab: React.FC<{ label: string; isActive: boolean; onClick: () => void; }> = ({ label, isActive, onClick }) => (
     <button
         onClick={onClick}
-        className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-colors ${
-            isActive ? 'bg-brand/20 text-brand' : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-        }`}
+        className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-colors ${isActive ? 'bg-brand/20 text-brand' : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+            }`}
     >
         {label}
     </button>
@@ -214,9 +218,9 @@ export const AllFinancialGoalsBlock: React.FC<{
             {filteredGoals.length > 0 ? (
                 <div className="space-y-3 pr-2">
                     {filteredGoals.map(goal => (
-                        <GoalListItem 
-                            key={goal.id} 
-                            goal={goal} 
+                        <GoalListItem
+                            key={goal.id}
+                            goal={goal}
                             onAction={onAction}
                             onClick={onGoalClick ? () => onGoalClick(goal.id) : undefined}
                             isSelected={goal.id === selectedGoalId}
@@ -247,14 +251,14 @@ const TransactionItem: React.FC<{ transaction: Transaction; onDelete: () => void
         </div>
         <div className="flex items-center gap-3 ml-2">
             <p className={`font-semibold text-sm flex-shrink-0 ${transaction.type === 'income' ? 'text-success' : 'text-foreground'}`}>
-               {transaction.type === 'income' ? `+£${transaction.amount.toFixed(2)}` : `-£${transaction.amount.toFixed(2)}`}
+                {transaction.type === 'income' ? `+£${transaction.amount.toFixed(2)}` : `-£${transaction.amount.toFixed(2)}`}
             </p>
-            <button 
-                onClick={onDelete} 
+            <button
+                onClick={onDelete}
                 className="w-6 h-6 flex items-center justify-center rounded-full bg-card hover:bg-destructive text-muted-foreground hover:text-destructive-foreground transition-all opacity-50 group-hover:opacity-100"
                 aria-label={`Delete transaction ${transaction.description}`}
             >
-                 <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"></path></svg>
+                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"></path></svg>
             </button>
         </div>
     </div>
@@ -263,7 +267,7 @@ const TransactionItem: React.FC<{ transaction: Transaction; onDelete: () => void
 export const RecentTransactionsBlock: React.FC<{ transactions: Transaction[], onAdd: () => void; onDelete: (id: string) => void; }> = ({ transactions, onAdd, onDelete }) => {
     return (
         <BlockContainer>
-             <div className="flex justify-between items-center mb-4">
+            <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-heading text-foreground">Recent Transactions</h3>
                 <Button onClick={onAdd} variant="ghost" className="text-xs px-2 py-1 h-auto">+ Add</Button>
             </div>
@@ -284,42 +288,111 @@ export const RecentTransactionsBlock: React.FC<{ transactions: Transaction[], on
 };
 
 // ===================================
-// Spending Breakdown Block (with Donut Chart)
+// Spending Breakdown Block (with Chart.js Doughnut Chart)
 // ===================================
 
-const DonutChart: React.FC<{ data: { name: string; value: number; color: string }[] }> = ({ data }) => {
-    const size = 120;
-    const strokeWidth = 15;
-    const radius = (size - strokeWidth) / 2;
-    const circumference = 2 * Math.PI * radius;
-    
-    let cumulativePercent = 0;
+// Chart.js Doughnut Chart Component with Fixed Tooltip Clipping
+const ChartJsDonutChart: React.FC<{ data: { name: string; value: number; color: string; amount: number }[] }> = ({ data }) => {
+    console.log('Chart data:', data); // Debug log
+
+    if (!data || data.length === 0) {
+        return <div style={{ width: '180px', height: '180px' }} className="flex items-center justify-center text-muted-foreground text-xs">No data</div>;
+    }
+
+    const chartData = {
+        labels: data.map(item => item.name),
+        datasets: [
+            {
+                data: data.map(item => item.amount),
+                backgroundColor: data.map(item => item.color),
+                borderColor: 'transparent',
+                borderWidth: 0,
+                hoverBorderWidth: 2,
+                hoverBorderColor: '#ffffff',
+            },
+        ],
+    };
+
+    const options = {
+        responsive: true,
+        maintainAspectRatio: false,
+        // Add layout padding to prevent tooltip clipping
+        layout: {
+            padding: {
+                top: 20,
+                right: 20,
+                bottom: 20,
+                left: 20,
+            }
+        },
+        plugins: {
+            legend: {
+                display: false,
+            },
+            tooltip: {
+                enabled: true,
+                position: 'nearest' as const,
+                backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                titleColor: '#ffffff',
+                bodyColor: '#ffffff',
+                borderColor: '#666666',
+                borderWidth: 1,
+                cornerRadius: 6,
+                displayColors: true,
+                padding: 8,
+                // Ensure tooltip doesn't get clipped
+                external: undefined, // Use default tooltip positioning
+                intersect: false,
+                // Add word wrapping for long labels
+                bodyFont: {
+                    size: 12,
+                },
+                titleFont: {
+                    size: 12,
+                    weight: 'bold' as const,
+                },
+                // Custom positioning to avoid clipping
+                caretPadding: 4,
+                callbacks: {
+                    label: function (context: any) {
+                        const label = context.label || '';
+                        const value = context.parsed;
+                        const total = data.reduce((sum, item) => sum + item.amount, 0);
+                        const percentage = ((value / total) * 100).toFixed(1);
+                        return `${label}: £${value.toFixed(2)} (${percentage}%)`;
+                    }
+                }
+            }
+        },
+        cutout: '60%',
+        elements: {
+            arc: {
+                borderWidth: 0,
+            }
+        },
+        interaction: {
+            intersect: false,
+            mode: 'nearest' as const,
+        },
+        // Ensure chart respects container bounds
+        onResize: (chart: any, size: any) => {
+            // Optional: Handle resize events if needed
+        },
+    };
 
     return (
-        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-            <circle cx={size/2} cy={size/2} r={radius} fill="transparent" stroke="var(--muted)" strokeWidth={strokeWidth} />
-            {data.map((item, index) => {
-                const segmentLength = (item.value / 100) * circumference;
-                const offset = (cumulativePercent / 100) * circumference;
-                cumulativePercent += item.value;
-                
-                return (
-                     <circle
-                        key={index}
-                        cx={size/2}
-                        cy={size/2}
-                        r={radius}
-                        fill="transparent"
-                        stroke={item.color}
-                        strokeWidth={strokeWidth}
-                        strokeDasharray={`${segmentLength} ${circumference}`}
-                        strokeDashoffset={-offset}
-                        transform={`rotate(-90 ${size/2} ${size/2})`}
-                        className="transition-all duration-500"
-                    />
-                )
-            })}
-        </svg>
+        // Increase container size and add proper overflow handling
+        <div style={{ 
+            width: '200px', 
+            height: '200px', 
+            position: 'relative',
+            // This is crucial - allow overflow for tooltips
+            overflow: 'visible',
+            // Ensure z-index allows tooltips to show above other elements
+            zIndex: 12
+        }}>
+            <Doughnut data={chartData} options={options} />
+        </div>
     );
 };
 
@@ -329,19 +402,19 @@ export const SpendingBreakdownBlock: React.FC<{ transactions: Transaction[] }> =
         const totalExpense = expenses.reduce((sum, t) => sum + t.amount, 0);
 
         if (totalExpense === 0) return [];
-        
+
         const categoryMap = expenses.reduce((acc, t) => {
             acc[t.category] = (acc[t.category] || 0) + t.amount;
             return acc;
         }, {} as Record<string, number>);
 
         const colors = [
-            'var(--chart-1)',
-            'var(--chart-2)',
-            'var(--chart-3)',
-            'var(--chart-4)',
-            'var(--chart-5)',
-            'var(--chart-6)',
+            '#8b5cf6', // Purple
+            '#06b6d4', // Cyan  
+            '#ec4899', // Pink
+            '#f59e0b', // Amber
+            '#3b82f6', // Blue
+            '#10b981', // Emerald
         ];
 
         return Object.entries(categoryMap)
@@ -353,29 +426,44 @@ export const SpendingBreakdownBlock: React.FC<{ transactions: Transaction[] }> =
             }))
             .sort((a, b) => b.value - a.value);
     }, [transactions]);
-    
+
     return (
-        <BlockContainer>
-             <h3 className="text-lg font-heading text-foreground mb-4">Spending Breakdown</h3>
+        <BlockContainer className="overflow-visible" style={{ overflow: 'visible' }}>
+            <h3 className="text-lg font-heading text-foreground mb-4">Spending Breakdown</h3>
             {categoryData.length > 0 ? (
-                <div className="flex flex-col sm:flex-row items-center gap-4">
-                    <div className="flex-shrink-0">
-                        <DonutChart data={categoryData} />
+                <div 
+                    className="flex flex-col sm:flex-row items-center gap-4" 
+                    style={{ 
+                        overflow: 'visible',
+                        // Ensure adequate spacing for tooltips
+                        minHeight: '200px'
+                    }}
+                >
+                    <div 
+                        className="flex-shrink-0" 
+                        style={{ 
+                            overflow: 'visible',
+                            // Add z-index to ensure tooltips show above other content
+                            zIndex: 10,
+                            position: 'relative'
+                        }}
+                    >
+                        <ChartJsDonutChart data={categoryData} />
                     </div>
-                    <div className="w-full space-y-2 text-sm overflow-hidden">
+                    <div className="w-full space-y-2 text-sm">
                         {categoryData.slice(0, 4).map(item => (
                             <div key={item.name} className="flex justify-between items-center">
                                 <div className="flex items-center gap-2">
                                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }}></div>
                                     <span className="text-muted-foreground truncate">{item.name}</span>
-                                 </div>
+                                </div>
                                 <span className="font-semibold text-foreground">{item.value.toFixed(0)}%</span>
                             </div>
                         ))}
                     </div>
                 </div>
             ) : (
-                 <div className="flex-1 flex flex-col items-center justify-center text-center p-4 min-h-[100px]">
+                <div className="flex-1 flex flex-col items-center justify-center text-center p-4 min-h-[100px]">
                     <p className="text-sm text-muted-foreground">No spending data available.</p>
                     <p className="text-xs text-muted-foreground/80 mt-1">Add some expenses to see a breakdown.</p>
                 </div>

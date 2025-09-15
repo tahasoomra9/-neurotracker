@@ -5,6 +5,7 @@ import Button from '../common/Button';
 
 interface InsightsPageProps {
     insights: AIInsight[];
+    onFilterChange?: (filter: InsightFilter) => void;
 }
 
 type InsightFilter = 'all' | AIInsight['type'];
@@ -21,8 +22,15 @@ const FilterTab: React.FC<{ label: string; isActive: boolean; onClick: () => voi
 );
 
 
-const InsightsPage: React.FC<InsightsPageProps> = ({ insights }) => {
+const InsightsPage: React.FC<InsightsPageProps> = ({ insights, onFilterChange }) => {
     const [filter, setFilter] = useState<InsightFilter>('all');
+
+    // Notify parent when filter changes
+    React.useEffect(() => {
+        if (onFilterChange) {
+            onFilterChange(filter);
+        }
+    }, [filter, onFilterChange]);
 
     const filteredInsights = useMemo(() => {
         if (filter === 'all') return insights;

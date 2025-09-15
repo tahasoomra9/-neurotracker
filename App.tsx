@@ -28,6 +28,8 @@ const App: React.FC = () => {
   const [theme, setTheme] = useState<Theme>('dark');
   const [username, setUsername] = useState<string>('Wanderer');
   const [activeView, setActiveView] = useState<AppView>('dashboard');
+  const [currentGoalsTab, setCurrentGoalsTab] = useState<'financial' | 'personal'>('financial');
+  const [currentInsightsFilter, setCurrentInsightsFilter] = useState<'all' | 'financial' | 'personal' | 'cross-goal' | 'motivational'>('all');
 
   // Load saved data when app starts
   useEffect(() => {
@@ -426,6 +428,29 @@ const App: React.FC = () => {
                         onMarkAsRead={handleMarkNotificationAsRead}
                         onMarkAllAsRead={handleMarkAllNotificationsAsRead}
                         onClearRead={handleClearReadNotifications}
+                        currentPage={activeView === 'dashboard' ? 'Dashboard' : activeView === 'goals' ? 'Goals' : activeView === 'insights' ? 'Insights' : 'Dashboard'}
+                        currentSubPage={
+                            activeView === 'goals' 
+                                ? (currentGoalsTab === 'financial' ? 'Finance' : 'Personal')
+                                : activeView === 'insights' && currentInsightsFilter !== 'all'
+                                    ? (currentInsightsFilter === 'financial' ? 'Financial' 
+                                        : currentInsightsFilter === 'personal' ? 'Personal'
+                                        : currentInsightsFilter === 'cross-goal' ? 'Cross-Goal'
+                                        : currentInsightsFilter === 'motivational' ? 'Motivational'
+                                        : undefined)
+                                    : undefined
+                        }
+                        onNavigate={(page) => {
+                            const pageMap: { [key: string]: AppView } = {
+                                'Dashboard': 'dashboard',
+                                'Goals': 'goals',
+                                'Insights': 'insights'
+                            };
+                            const targetView = pageMap[page];
+                            if (targetView) {
+                                setActiveView(targetView);
+                            }
+                        }}
                     />
                     <main className="flex-1 p-4 sm:p-6 overflow-y-auto">
                         {activeView === 'dashboard' && (
@@ -455,10 +480,14 @@ const App: React.FC = () => {
                                 onSetupPersonalGoal={handlePersonalGoalSetup}
                                 onAddTransaction={handleAddTransaction}
                                 onDeleteTransaction={handleDeleteTransaction}
+                                onTabChange={setCurrentGoalsTab}
                             />
                         )}
                          {activeView === 'insights' && (
-                            <InsightsPage insights={insights} />
+                            <InsightsPage 
+                                insights={insights} 
+                                onFilterChange={setCurrentInsightsFilter}
+                            />
                         )}
                     </main>
                 </div>

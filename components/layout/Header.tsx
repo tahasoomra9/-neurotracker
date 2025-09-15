@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Notification } from '../../types';
 import NotificationPopover from './NotificationPopover';
+import Breadcrumbs from '@mui/material/Breadcrumbs';
+import Link from '@mui/material/Link';
 
 const useOutsideClick = (ref: React.RefObject<HTMLElement>, callback: () => void) => {
     useEffect(() => {
@@ -22,6 +24,9 @@ interface HeaderProps {
     onMarkAsRead: (id: string) => void;
     onMarkAllAsRead: () => void;
     onClearRead: () => void;
+    currentPage?: string;
+    currentSubPage?: string;
+    onNavigate?: (page: string) => void;
 }
 
 const Header: React.FC<HeaderProps> = ({ 
@@ -31,7 +36,10 @@ const Header: React.FC<HeaderProps> = ({
     notifications,
     onMarkAsRead,
     onMarkAllAsRead,
-    onClearRead
+    onClearRead,
+    currentPage = 'Overview',
+    currentSubPage,
+    onNavigate
 }) => {
     const today = new Date();
     const dateString = today.toLocaleDateString('en-US', {
@@ -128,10 +136,17 @@ const Header: React.FC<HeaderProps> = ({
         }
     };
 
+    const handleBreadcrumbClick = (page: string) => {
+        console.log(`Breadcrumb clicked: ${page}`);
+        if (onNavigate && page !== currentPage) {
+            onNavigate(page);
+        }
+    };
+
     return (
-        <header className="premium-header flex justify-between items-center px-4 sm:px-6 h-[80px] sticky top-0 z-20" style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}>
-            <div className="flex items-center gap-4" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
-                 <button onClick={onToggleSidebar} className="lg:hidden text-muted-foreground hover:text-foreground">
+        <header className="premium-header flex justify-between items-center px-4 sm:px-6 h-[100px] sticky top-0 z-20" style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}>
+            <div className="flex items-start gap-4 pt-4" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
+                 <button onClick={onToggleSidebar} className="lg:hidden text-muted-foreground hover:text-foreground mt-1">
                     <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                     </svg>
@@ -151,28 +166,144 @@ const Header: React.FC<HeaderProps> = ({
                         />
                     </div>
                  ) : (
-                    <div 
-                        className="group flex items-center gap-2 cursor-pointer"
-                        onClick={() => setIsEditing(true)}
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setIsEditing(true); }}
-                        aria-label={`Current user: ${username}. Click to edit.`}
-                    >
-                        <h1 className="text-xl sm:text-2xl font-heading text-foreground">
-                            Good afternoon, {username}
-                        </h1>
-                        <div className="opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden="true">
-                            <svg className="h-4 w-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L16.732 3.732z" />
-                            </svg>
+                    <div className="flex flex-col gap-1">
+                        <div 
+                            className="group flex items-center gap-2 cursor-pointer"
+                            onClick={() => setIsEditing(true)}
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setIsEditing(true); }}
+                            aria-label={`Current user: ${username}. Click to edit.`}
+                        >
+                            <h1 className="text-xl sm:text-2xl font-heading text-foreground">
+                                Good afternoon, {username}
+                            </h1>
+                            <div className="opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden="true">
+                                <svg className="h-4 w-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L16.732 3.732z" />
+                                </svg>
+                            </div>
+                        </div>
+                        <div role="presentation">
+                            <Breadcrumbs aria-label="breadcrumb" sx={{ 
+                                '& .MuiBreadcrumbs-separator': { 
+                                    color: 'rgb(156 163 175)' // text-muted-foreground equivalent
+                                }
+                            }}>
+                                <Link 
+                                    component="button"
+                                    underline="hover" 
+                                    color="rgb(156 163 175)" 
+                                    onClick={() => handleBreadcrumbClick('Dashboard')}
+                                    sx={{ 
+                                        fontSize: '0.875rem',
+                                        border: 'none',
+                                        background: 'none',
+                                        padding: 0,
+                                        cursor: 'pointer',
+                                        fontFamily: 'inherit',
+                                        '&:hover': { color: 'rgb(255 255 255)' }
+                                    }}
+                                >
+                                    Home
+                                </Link>
+                                
+                                {/* Show Goals breadcrumb if we're in Goals section */}
+                                {currentPage === 'Goals' && (
+                                    <Link 
+                                        component="button"
+                                        underline="hover" 
+                                        color={currentSubPage ? "rgb(156 163 175)" : "rgb(255 255 255)"} 
+                                        onClick={() => handleBreadcrumbClick('Goals')}
+                                        aria-current={!currentSubPage ? "page" : undefined}
+                                        sx={{ 
+                                            fontSize: '0.875rem',
+                                            border: 'none',
+                                            background: 'none',
+                                            padding: 0,
+                                            cursor: currentSubPage ? 'pointer' : 'default',
+                                            fontFamily: 'inherit',
+                                            '&:hover': currentSubPage ? { color: 'rgb(255 255 255)' } : {}
+                                        }}
+                                    >
+                                        Goals
+                                    </Link>
+                                )}
+                                
+                                {/* Show Insights breadcrumb if we're in Insights section */}
+                                {currentPage === 'Insights' && (
+                                    <Link 
+                                        component="button"
+                                        underline="hover" 
+                                        color={currentSubPage ? "rgb(156 163 175)" : "rgb(255 255 255)"} 
+                                        onClick={() => handleBreadcrumbClick('Insights')}
+                                        aria-current={!currentSubPage ? "page" : undefined}
+                                        sx={{ 
+                                            fontSize: '0.875rem',
+                                            border: 'none',
+                                            background: 'none',
+                                            padding: 0,
+                                            cursor: currentSubPage ? 'pointer' : 'default',
+                                            fontFamily: 'inherit',
+                                            '&:hover': currentSubPage ? { color: 'rgb(255 255 255)' } : {}
+                                        }}
+                                    >
+                                        Insights
+                                    </Link>
+                                )}
+                                
+                                {/* Show sub-page if we're in Goals or Insights with a specific tab/filter */}
+                                {(currentPage === 'Goals' || currentPage === 'Insights') && currentSubPage && (
+                                    <Link
+                                        underline="hover"
+                                        color="rgb(255 255 255)"
+                                        aria-current="page"
+                                        sx={{ 
+                                            fontSize: '0.875rem',
+                                            cursor: 'default'
+                                        }}
+                                    >
+                                        {currentSubPage}
+                                    </Link>
+                                )}
+                                
+                                {/* Show other pages (not Dashboard, Goals, or Insights) */}
+                                {currentPage !== 'Dashboard' && currentPage !== 'Goals' && currentPage !== 'Insights' && (
+                                    <Link
+                                        underline="hover"
+                                        color="rgb(255 255 255)"
+                                        aria-current="page"
+                                        sx={{ 
+                                            fontSize: '0.875rem',
+                                            cursor: 'default'
+                                        }}
+                                    >
+                                        {currentPage}
+                                    </Link>
+                                )}
+                                
+                                {/* Show Dashboard if we're on Dashboard */}
+                                {currentPage === 'Dashboard' && (
+                                    <Link
+                                        underline="hover"
+                                        color="rgb(255 255 255)"
+                                        aria-current="page"
+                                        sx={{ 
+                                            fontSize: '0.875rem',
+                                            cursor: 'default'
+                                        }}
+                                    >
+                                        Dashboard
+                                    </Link>
+                                )}
+                            </Breadcrumbs>
                         </div>
                     </div>
                  )}
             </div>
-            <div className="flex items-center gap-4 sm:gap-6" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
-                <span className="hidden sm:block text-sm text-muted-foreground">{dateString}</span>
-                <div className="relative" ref={notificationsRef}>
+            <div className="flex items-start gap-4 sm:gap-6 pt-4" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
+                <span className="hidden sm:block text-sm text-muted-foreground mt-1">{dateString}</span>
+                <div className="relative mt-1" ref={notificationsRef}>
                     <button
                         onClick={() => setIsNotificationsOpen(prev => !prev)}
                         className="relative text-muted-foreground hover:text-foreground transition-colors"
@@ -200,7 +331,7 @@ const Header: React.FC<HeaderProps> = ({
                 </div>
                 
                 {/* Window Controls */}
-                <div className="flex items-center">
+                <div className="flex items-center mt-1">
                     <button
                         onClick={handleMinimize}
                         className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded transition-colors"
