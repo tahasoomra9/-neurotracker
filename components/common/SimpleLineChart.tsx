@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 interface ChartDataPoint {
   label: string;
@@ -7,27 +7,22 @@ interface ChartDataPoint {
 
 interface SimpleLineChartProps {
   data: ChartDataPoint[];
-  width?: number;
-  height?: number;
-  color?: string;
 }
 
-const SimpleLineChart: React.FC<SimpleLineChartProps> = ({
-  data,
-  width = 300,
-  height = 150,
-  color = 'var(--brand)',
-}) => {
+const SimpleLineChart: React.FC<SimpleLineChartProps> = ({ data }) => {
+  const [tooltip, setTooltip] = useState<{ x: number, y: number, label: string, value: number } | null>(null);
+
   if (!data || data.length < 2) {
     return (
-      <div style={{ minWidth: width, height }} className="flex w-full items-center justify-center text-sm text-muted-foreground">
-        Not enough data to display chart.
+      <div className="flex items-center justify-center h-48 bg-muted/50 rounded-lg">
+        <p className="text-muted-foreground">Not enough data to display chart.</p>
       </div>
     );
   }
 
-  const padding = { top: 20, right: 20, bottom: 30, left: 45 };
-  const svgWidth = '100%';
+  const width = 500;
+  const height = 200;
+  const padding = { top: 20, right: 20, bottom: 30, left: 20 };
 
   const chartWidth = width - padding.left - padding.right;
   const chartHeight = height - padding.top - padding.bottom;
@@ -35,74 +30,105 @@ const SimpleLineChart: React.FC<SimpleLineChartProps> = ({
   const maxValue = Math.max(...data.map(d => d.value), 0);
   const minValue = 0;
 
-  const getX = (index: number, dynamicWidth: number) => padding.left + (index / (data.length - 1)) * (dynamicWidth - padding.left - padding.right);
-  const getY = (value: number) => padding.top + chartHeight - ((value - minValue) / (maxValue - minValue || 1)) * chartHeight;
+  const getX = (index: number) => padding.left + (index / (data.length - 1)) * chartWidth;
 
-  const yAxisTicks = 4;
-  const tickValues = Array.from({ length: yAxisTicks + 1 }, (_, i) => 
-    Math.round(minValue + (i * (maxValue - minValue)) / yAxisTicks)
-  );
+  const getY = (value: number) => {
+    if (maxValue === minValue) return padding.top + chartHeight / 2;
+    const y = padding.top + chartHeight - ((value - minValue) / (maxValue - minValue)) * chartHeight;
+    return Math.max(padding.top, Math.min(y, height - padding.bottom)); // clamp to chart area
+  };
+
+  const linePath = data
+    .map((point, i) => `${i === 0 ? 'M' : 'L'} ${getX(i)} ${getY(point.value)}`)
+    .join(' ');
+    
+  const areaPath = `${linePath} V ${height - padding.bottom} H ${padding.left} Z`;
+  
+  const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    const svg = e.currentTarget;
+    const pt = svg.createSVGPoint();
+    pt.x = e.clientX;
+    pt.y = e.clientY;
+    const screenCTM = svg.getScreenCTM();
+    if (!screenCTM) return;
+    const cursorPoint = pt.matrixTransform(screenCTM.inverse());
+    
+    const index = Math.round(((cursorPoint.x - padding.left) / chartWidth) * (data.length - 1));
+
+    if (index >= 0 && index < data.length) {
+      const point = data[index];
+      setTooltip({
+        x: getX(index),
+        y: getY(point.value),
+        label: point.label,
+        value: point.value
+      });
+    } else {
+      setTooltip(null);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setTooltip(null);
+  };
 
   return (
-    <div className="w-full">
-        <svg width={svgWidth} height={height} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="xMinYMin meet">
+    <div className="relative">
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        className="w-full h-auto"
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+        role="img"
+        aria-labelledby="chart-title"
+      >
+        <title id="chart-title">Weekly Savings History Chart</title>
         <defs>
-            <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={color} stopOpacity={0.3} />
-            <stop offset="100%" stopColor={color} stopOpacity={0} />
-            </linearGradient>
+          <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="var(--brand)" stopOpacity={0.4} />
+            <stop offset="100%" stopColor="var(--brand)" stopOpacity={0} />
+          </linearGradient>
         </defs>
         
-        {/* Y Axis Labels and Grid Lines */}
-        <g>
-            {tickValues.map((value, i) => (
-            <g key={i} transform={`translate(0, ${getY(value)})`}>
-                <line x1={padding.left - 5} x2={width - padding.right} stroke="var(--border)" strokeWidth="0.5" strokeDasharray="2,2" />
-                <text x={padding.left - 10} y="4" textAnchor="end" fontSize="10" fill="var(--muted-foreground)">
-                 £{value}
-                </text>
-            </g>
-            ))}
-        </g>
-        
-        {/* X Axis Labels */}
-        <g>
-            {data.map((point, i) => (
-                (data.length < 10 || i % Math.ceil(data.length / 5) === 0) && (
-                    <text key={i} x={getX(i, width)} y={height - padding.bottom + 20} textAnchor="middle" fontSize="10" fill="var(--muted-foreground)">
-                        {point.label}
-                    </text>
-                )
-            ))}
-        </g>
+        <path d={areaPath} fill="url(#areaGradient)" aria-hidden="true" />
 
-        {/* Line and Area */}
-        <path 
-            d={data.map((point, index) => `${index === 0 ? 'M' : 'L'} ${getX(index, width)} ${getY(point.value)}`).join(' ')} 
-            fill="none" 
-            stroke={color} 
-            strokeWidth="2" 
-            strokeLinecap="round" 
-            strokeLinejoin="round" 
-        />
-        <path 
-            d={`${data.map((point, index) => `${index === 0 ? 'M' : 'L'} ${getX(index, width)} ${getY(point.value)}`).join(' ')} L ${getX(data.length - 1, width)} ${height - padding.bottom} L ${getX(0, width)} ${height - padding.bottom} Z`}
-            fill="url(#areaGradient)" 
-        />
-        
-        {/* Data Points */}
-        <g>
-            {data.map((point, index) => (
-                <circle 
-                    key={index} 
-                    cx={getX(index, width)} 
-                    cy={getY(point.value)} 
-                    r="3" 
-                    fill={color}
-                />
-            ))}
+        <path d={linePath} fill="none" stroke="var(--brand)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" />
+
+        <g className="text-xs" fill="var(--muted-foreground)" aria-hidden="true">
+          {data.map((point, i) => {
+            if (i === 0 || i === data.length - 1 || (data.length > 10 && i > 0 && i < data.length - 1 && i % Math.floor(data.length / 5) === 0)) {
+              return (
+                <text key={i} x={getX(i)} y={height - padding.bottom + 15} textAnchor="middle">
+                  {point.label}
+                </text>
+              );
+            }
+            return null;
+          })}
         </g>
-        </svg>
+        
+        {tooltip && (
+          <g aria-hidden="true">
+            <line x1={tooltip.x} y1={padding.top} x2={tooltip.x} y2={height - padding.bottom} stroke="var(--border)" strokeWidth="1" strokeDasharray="4 2" />
+            <circle cx={tooltip.x} cy={tooltip.y} r="5" fill="var(--brand)" stroke="var(--background)" strokeWidth="2" />
+          </g>
+        )}
+      </svg>
+      {tooltip && (
+         <div 
+            role="tooltip"
+            className="absolute p-2 text-xs rounded-md shadow-lg pointer-events-none bg-popover text-popover-foreground border border-border animate-modal-in"
+            style={{
+              left: `${(tooltip.x / width) * 100}%`,
+              top: `${(tooltip.y / height) * 100}%`,
+              transform: `translate(-50%, -120%)`,
+              whiteSpace: 'nowrap'
+            }}
+         >
+            <p className="font-semibold">{tooltip.label}</p>
+            <p>£{tooltip.value.toFixed(2)}</p>
+         </div>
+      )}
     </div>
   );
 };

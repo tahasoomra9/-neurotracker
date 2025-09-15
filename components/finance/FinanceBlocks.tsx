@@ -132,7 +132,12 @@ const GoalStatusIndicator: React.FC<{ status: 'active' | 'paused' | 'completed' 
 };
 
 
-const GoalListItem: React.FC<{ goal: FinancialGoal, onAction: (action: ActionType, goal: FinancialGoal) => void; onGoalClick: (id: string) => void; isActive: boolean; }> = ({ goal, onAction, onGoalClick, isActive }) => {
+const GoalListItem: React.FC<{
+    goal: FinancialGoal;
+    onAction: (action: ActionType, goal: FinancialGoal) => void;
+    onClick?: () => void;
+    isSelected: boolean;
+}> = ({ goal, onAction, onClick, isSelected }) => {
     const progress = goal.targetAmount > 0 ? (goal.currentAmount / goal.targetAmount) * 100 : 0;
     
     const handleLocalAction = (action: ActionType) => {
@@ -144,7 +149,10 @@ const GoalListItem: React.FC<{ goal: FinancialGoal, onAction: (action: ActionTyp
     }
 
     return (
-        <button onClick={() => onGoalClick(goal.id)} className={`w-full text-left bg-card/80 p-4 rounded-lg transition-all duration-300 animate-[modal-in_0.3s_ease-out_forwards] overflow-visible hover:bg-card focus:outline-none focus:ring-2 focus:ring-ring ${isActive ? 'bg-brand/10 ring-2 ring-brand/50' : ''}`}>
+        <div 
+            onClick={onClick}
+            className={`bg-card/80 p-4 rounded-lg transition-all duration-300 animate-[modal-in_0.3s_ease-out_forwards] overflow-visible ${onClick ? 'cursor-pointer' : ''} ${isSelected ? 'ring-2 ring-brand ring-offset-2 ring-offset-background' : 'hover:bg-card'}`}
+        >
             <div className="flex justify-between items-start mb-2">
                 <div>
                     <p className="font-semibold text-foreground">{goal.itemName}</p>
@@ -152,7 +160,7 @@ const GoalListItem: React.FC<{ goal: FinancialGoal, onAction: (action: ActionTyp
                 </div>
                 <div className="flex items-center gap-2">
                     <GoalStatusIndicator status={goal.status} />
-                    <div onClick={e => e.stopPropagation()}><ActionMenu status={goal.status} onAction={handleLocalAction} /></div>
+                    <ActionMenu status={goal.status} onAction={handleLocalAction} />
                 </div>
             </div>
             <ProgressBar progress={progress} />
@@ -160,7 +168,7 @@ const GoalListItem: React.FC<{ goal: FinancialGoal, onAction: (action: ActionTyp
                 <span className="text-muted-foreground">£{goal.currentAmount.toLocaleString()}</span>
                 <span className="text-foreground">£{goal.targetAmount.toLocaleString()}</span>
             </div>
-        </button>
+        </div>
     );
 }
 
@@ -175,7 +183,13 @@ const FilterTab: React.FC<{ label: string; isActive: boolean; onClick: () => voi
     </button>
 )
 
-export const AllFinancialGoalsBlock: React.FC<{ goals: FinancialGoal[], onAddNew: () => void, onAction: (action: ActionType, goal: FinancialGoal) => void; onGoalClick: (id: string) => void; selectedGoalId: string | null; }> = ({ goals, onAddNew, onAction, onGoalClick, selectedGoalId }) => {
+export const AllFinancialGoalsBlock: React.FC<{
+    goals: FinancialGoal[];
+    onAddNew: () => void;
+    onAction: (action: ActionType, goal: FinancialGoal) => void;
+    onGoalClick?: (id: string) => void;
+    selectedGoalId?: string | null;
+}> = ({ goals, onAddNew, onAction, onGoalClick, selectedGoalId }) => {
     const [filter, setFilter] = useState<'active' | 'paused' | 'completed' | 'all'>('active');
 
     const filteredGoals = useMemo(() => {
@@ -200,7 +214,13 @@ export const AllFinancialGoalsBlock: React.FC<{ goals: FinancialGoal[], onAddNew
             {filteredGoals.length > 0 ? (
                 <div className="space-y-3 pr-2">
                     {filteredGoals.map(goal => (
-                        <GoalListItem key={goal.id} goal={goal} onAction={onAction} onGoalClick={onGoalClick} isActive={selectedGoalId === goal.id} />
+                        <GoalListItem 
+                            key={goal.id} 
+                            goal={goal} 
+                            onAction={onAction}
+                            onClick={onGoalClick ? () => onGoalClick(goal.id) : undefined}
+                            isSelected={goal.id === selectedGoalId}
+                        />
                     ))}
                 </div>
             ) : (
@@ -249,7 +269,7 @@ export const RecentTransactionsBlock: React.FC<{ transactions: Transaction[], on
             </div>
             <div className="space-y-2 overflow-y-auto max-h-[400px] pr-2 min-h-[200px]">
                 {transactions.length > 0 ? (
-                    transactions.slice(0, 10).map(tx => (
+                    transactions.map(tx => (
                         <TransactionItem key={tx.id} transaction={tx} onDelete={() => onDelete(tx.id)} />
                     ))
                 ) : (
