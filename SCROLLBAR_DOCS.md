@@ -1,6 +1,6 @@
-# Custom Scrollbar Implementation
+# NeuroTracker Desktop Application
 
-A minimal, lightweight scrolling solution for your Electron + React application that replaces default Windows scrollbars with smooth, subtle custom ones.
+A modern desktop application built with Electron and React for neural activity tracking and analysis.
 
 ## Features
 
