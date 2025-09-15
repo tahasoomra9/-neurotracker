@@ -2,7 +2,7 @@
   "name": "neurotracker-desktop-app",
   "version": "0.0.0",
   "description": "NeuroTracker Desktop App",
-  "author": "Your Name",
+  "author": "[Your Name]",
   "type": "module",
   "main": "electron/main.js",
   "private": true,

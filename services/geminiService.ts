@@ -1,3 +1,4 @@
+// Service for handling AI analysis and goal planning
 import { GoogleGenAI, Type } from "@google/genai";
 import { FinancialGoalSetupData, PersonalGoalSetupData, FinancialGoal, PersonalGoal, WeeklyTask, AIInsight } from '../types';
 
@@ -7,6 +8,7 @@ if (!process.env.API_KEY) {
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
+// Response schemas to ensure consistent AI output format
 const financialGoalAnalysisSchema = {
     type: Type.OBJECT,
     properties: {
@@ -50,6 +52,7 @@ const weeklyUpdateSchema = {
 };
 
 
+// Analyze financial goals and create realistic savings plans
 export const getFinancialGoalAnalysis = async (data: FinancialGoalSetupData) => {
     const prompt = `
       A user is setting up a financial goal. Analyze the feasibility and provide a structured plan.
@@ -96,6 +99,7 @@ export const getFinancialGoalAnalysis = async (data: FinancialGoalSetupData) => 
     return { newFinancialGoal };
 };
 
+// Break down personal goals into manageable weekly tasks
 export const getPersonalGoalAnalysis = async (data: PersonalGoalSetupData) => {
     const prompt = `
       A user is setting up a personal goal. Analyze the feasibility and provide a structured plan.
@@ -144,12 +148,14 @@ export const getPersonalGoalAnalysis = async (data: PersonalGoalSetupData) => {
 };
 
 
+// Generate weekly progress updates and next week's tasks
 export const getWeeklyUpdate = async (
     financialGoal: FinancialGoal,
     personalGoal: PersonalGoal,
     savedAmount: number,
     completedTaskIds: string[]
 ) => {
+    // Calculate progress metrics for the week
     const currentWeekIndex = personalGoal.currentWeek - 1;
     const lastWeekTasks = personalGoal.taskHistory[currentWeekIndex] || [];
     const completedTasksCount = completedTaskIds.length;
@@ -196,15 +202,15 @@ export const getWeeklyUpdate = async (
 
     const result = JSON.parse(response.text);
 
-    // --- Create Updated Financial Goal ---
+    // Update financial progress
     const updatedFinancialGoal = { ...financialGoal };
     updatedFinancialGoal.currentAmount += savedAmount;
     updatedFinancialGoal.savingsHistory.push({ week: financialGoal.savingsHistory.length + 1, amount: savedAmount });
 
-    // --- Create Updated Personal Goal ---
+    // Update personal goal progress
     const updatedPersonalGoal = { ...personalGoal };
     
-    // 1. Finalize the completed status of the tasks for the week that just ended.
+    // Mark tasks as completed based on user input
     if(updatedPersonalGoal.taskHistory[currentWeekIndex]) {
         updatedPersonalGoal.taskHistory[currentWeekIndex] = updatedPersonalGoal.taskHistory[currentWeekIndex].map(task => ({
             ...task,
@@ -212,7 +218,7 @@ export const getWeeklyUpdate = async (
         }));
     }
 
-    // 2. Add the new AI-generated tasks for the upcoming week.
+    // Create tasks for next week based on AI recommendations
     const newAiTasks = result.nextWeekTasks.map((task: string): WeeklyTask => ({
       id: crypto.randomUUID(),
       description: task,
@@ -220,26 +226,25 @@ export const getWeeklyUpdate = async (
       isCustom: false,
     }));
     
-    // Check if a placeholder for the next week already exists (e.g., from custom tasks)
+    // Add tasks to the next week's schedule
     if (updatedPersonalGoal.taskHistory.length === updatedPersonalGoal.currentWeek) {
         updatedPersonalGoal.taskHistory.push(newAiTasks);
     } else {
-        // This case is for future features like planning ahead. For now, we assume we are always creating the next week.
         updatedPersonalGoal.taskHistory[updatedPersonalGoal.currentWeek] = newAiTasks;
     }
 
-    // 3. Update completion history for the week just finished.
+    // Record this week's completion stats
     updatedPersonalGoal.completionHistory.push({
       week: updatedPersonalGoal.currentWeek,
       completedTasks: completedTasksCount,
       totalTasks: totalTasksCount
     });
 
-    // 4. Advance to the next week.
+    // Move to next week
     updatedPersonalGoal.currentWeek += 1;
 
 
-    // --- Create New Insight ---
+    // Package the AI-generated insight
     const newInsight: AIInsight = {
         id: crypto.randomUUID(),
         type: result.insight.type,

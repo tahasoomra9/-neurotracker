@@ -1,14 +1,14 @@
 // electron/preload.js
 const { contextBridge, ipcRenderer } = require("electron");
 
-console.log("Preload script loaded ✅");
+console.log("Preload script loaded");
 
 // Expose a secure API to the renderer process (your React app)
 contextBridge.exposeInMainWorld("electronAPI", {
-  // ✅ Securely fetch API key
+  // Securely fetch API key
   getApiKey: () => ipcRenderer.invoke("get-api-key"),
 
-  // ✅ Custom window controls
+  // Custom window controls
   minimizeWindow: () => {
     console.log("Preload: minimizeWindow called");
     return ipcRenderer.invoke("window-minimize");
@@ -27,7 +27,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   },
 });
 
-console.log("electronAPI exposed to window ✅");
+console.log("electronAPI exposed to window");
 
 // Add a simple test to verify preload is working
 window.preloadTest = "Preload script is working!";

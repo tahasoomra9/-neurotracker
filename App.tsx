@@ -13,12 +13,15 @@ export type AppView = 'dashboard' | 'goals' | 'insights';
 export type Theme = 'dark' | 'light';
 
 const App: React.FC = () => {
+  // Core app state - user data and goals
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [financialGoals, setFinancialGoals] = useState<FinancialGoal[]>([]);
   const [personalGoals, setPersonalGoals] = useState<PersonalGoal[]>([]);
   const [insights, setInsights] = useState<AIInsight[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  
+  // UI state management
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [loadingMessage, setLoadingMessage] = useState<string>('Initializing...');
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
@@ -26,6 +29,7 @@ const App: React.FC = () => {
   const [username, setUsername] = useState<string>('Wanderer');
   const [activeView, setActiveView] = useState<AppView>('dashboard');
 
+  // Load saved data when app starts
   useEffect(() => {
     const savedData = localStorage.getItem('neuroTrackerData');
     if (savedData) {
@@ -38,6 +42,7 @@ const App: React.FC = () => {
       setNotifications(notifications || []);
     }
     
+    // Restore user preferences
     const savedTheme = localStorage.getItem('neuroTrackerTheme');
     const initialTheme = savedTheme ? JSON.parse(savedTheme) : 'dark';
     setTheme(initialTheme);
@@ -50,6 +55,7 @@ const App: React.FC = () => {
     setIsLoading(false);
   }, []);
   
+  // Apply theme changes to the document
   useEffect(() => {
     const root = document.documentElement;
     if (theme === 'light') {

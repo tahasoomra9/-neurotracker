@@ -46,7 +46,7 @@ const FinancialGoalSetupModal: React.FC<FinancialGoalSetupModalProps> = ({ onCom
                 <Input label="Monthly rent/housing cost?" type="number" name="housingCost" value={formData.housingCost} onChange={handleChange} prefix="£" required />
             </div>
 
-            <p className="text-xs text-center text-muted-foreground/70 my-4">By submitting, you agree to send this data to the Gemini API for analysis.</p>
+            <p className="text-xs text-center text-muted-foreground/70 my-4">By submitting, you agree to send this data for AI analysis.</p>
 
             <div className="flex items-center justify-end mt-6 space-x-4">
                 <Button type="button" onClick={onClose} variant="outline">Cancel</Button>

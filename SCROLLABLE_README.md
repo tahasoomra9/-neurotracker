@@ -4,14 +4,14 @@ A minimal, lightweight scrolling solution for your Electron + React application 
 
 ## Features
 
-- ✅ **Minimal & Lightweight**: No heavy UI libraries required
-- ✅ **Hover-visible scrollbars**: Subtle, thin scrollbars that appear on hover
-- ✅ **Multiple variants**: Default, thin, and auto-hide options
-- ✅ **Smooth scrolling**: CSS-based smooth scroll behavior
-- ✅ **TypeScript support**: Fully typed components and hooks
-- ✅ **Electron compatible**: Works in both dev server and built app
-- ✅ **Accessibility**: Respects `prefers-reduced-motion`
-- ✅ **Graceful fallback**: Falls back to default scrolling if needed
+- **Minimal & Lightweight**: No heavy UI libraries required
+- **Hover-visible scrollbars**: Subtle, thin scrollbars that appear on hover
+- **Multiple variants**: Default, thin, and auto-hide options
+- **Smooth scrolling**: CSS-based smooth scroll behavior
+- **TypeScript support**: Fully typed components and hooks
+- **Electron compatible**: Works in both dev server and built app
+- **Accessibility**: Respects `prefers-reduced-motion`
+- **Graceful fallback**: Falls back to default scrolling if needed
 
 ## Quick Start
 
@@ -156,9 +156,9 @@ To customize further, override the CSS classes:
 
 ## Browser Support
 
-- ✅ **Webkit browsers** (Chrome, Safari, Edge): Full custom styling
-- ✅ **Firefox**: Uses `scrollbar-width: thin` and `scrollbar-color`
-- ✅ **Fallback**: Default scrollbars if custom styling fails
+- **Webkit browsers** (Chrome, Safari, Edge): Full custom styling
+- **Firefox**: Uses `scrollbar-width: thin` and `scrollbar-color`
+- **Fallback**: Default scrollbars if custom styling fails
 
 ## Performance Notes
 

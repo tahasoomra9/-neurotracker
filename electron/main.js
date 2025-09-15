@@ -1,4 +1,4 @@
-// electron/main.js
+// Main Electron process - handles window creation and system integration
 import { app, BrowserWindow, ipcMain } from "electron";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
@@ -16,20 +16,19 @@ function createWindow() {
     width: 1440,
     height: 900,
     title: "NeuroTracker: AI Goal Achievement",
-    icon: join(__dirname, "../assets/icon.png"), // Add custom icon
-    frame: false, // Remove window frame and controls
+    icon: join(__dirname, "../assets/icon.png"),
+    frame: false, // Custom window controls for better UX
     webPreferences: {
-      // The preload script is the secure bridge between Node.js and the web content.
       preload: join(__dirname, "preload.js"),
-      contextIsolation: true, // secure: isolate context
-      nodeIntegration: false, // secure: disable Node in renderer
+      contextIsolation: true, // Keep things secure
+      nodeIntegration: false, // Don't expose Node.js to the renderer
     },
   });
 
-  // Remove the menu bar (File, Edit, View, etc.)
+  // Clean interface without default menu
   mainWindow.removeMenu();
 
-  // Load Vite dev server or built index.html
+  // Development vs production loading
   if (isDev) {
     mainWindow.loadURL("http://localhost:5173");
     mainWindow.webContents.openDevTools();
@@ -38,44 +37,34 @@ function createWindow() {
   }
 }
 
-// Handle the IPC call from the renderer process to get the API key
+// Secure API key access for renderer process
 ipcMain.handle("get-api-key", () => process.env.API_KEY);
 
-// Window control handlers
+// Custom window controls since we're using frameless window
 ipcMain.handle("window-minimize", () => {
-  console.log("Main: window-minimize called");
   if (mainWindow) {
     mainWindow.minimize();
-    console.log("Main: window minimized");
   }
 });
 
 ipcMain.handle("window-maximize", () => {
-  console.log("Main: window-maximize called");
   if (mainWindow) {
     if (mainWindow.isMaximized()) {
       mainWindow.unmaximize();
-      console.log("Main: window unmaximized");
     } else {
       mainWindow.maximize();
-      console.log("Main: window maximized");
     }
   }
 });
 
 ipcMain.handle("window-close", () => {
-  console.log("Main: window-close called");
   if (mainWindow) {
     mainWindow.close();
-    console.log("Main: window closed");
   }
 });
 
 ipcMain.handle("window-is-maximized", () => {
-  console.log("Main: window-is-maximized called");
-  const isMax = mainWindow ? mainWindow.isMaximized() : false;
-  console.log("Main: isMaximized =", isMax);
-  return isMax;
+  return mainWindow ? mainWindow.isMaximized() : false;
 });
 
 app.whenReady().then(() => {
