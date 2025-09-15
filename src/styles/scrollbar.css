@@ -1,0 +1,156 @@
+/* ==========================================================================
+   Custom Scrollbar Styles - Minimal & Lightweight
+   ========================================================================== */
+
+/* Global scrollbar hiding for all elements */
+* {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+*::-webkit-scrollbar {
+  display: none; /* Webkit browsers */
+}
+
+/* Ensure body and html have no scrollbars */
+html, body {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none; /* Webkit browsers */
+}
+
+/* Base scrollable container */
+.scrollable {
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  scrollbar-width: none; /* Firefox - completely hidden */
+  -ms-overflow-style: none; /* IE/Edge - completely hidden */
+}
+
+/* Webkit browsers (Chrome, Safari, Edge) */
+.scrollable::-webkit-scrollbar {
+  width: 6px;
+  background: transparent;
+  display: block; /* Override global hiding for scrollable elements */
+}
+
+.scrollable::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 3px;
+}
+
+.scrollable::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 3px;
+  transition: background-color 0.3s ease, opacity 0.3s ease;
+}
+
+.scrollable:hover::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
+}
+
+.scrollable::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+}
+
+.scrollable::-webkit-scrollbar-thumb:active {
+  background: hsl(var(--muted-foreground) / 0.7);
+}
+
+/* Corner where scrollbars meet */
+.scrollable::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Thin variant for smaller areas */
+.scrollable-thin {
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  scrollbar-width: none; /* Firefox - completely hidden */
+  -ms-overflow-style: none; /* IE/Edge - completely hidden */
+}
+
+.scrollable-thin::-webkit-scrollbar {
+  width: 4px;
+  background: transparent;
+  display: block; /* Override global hiding */
+}
+
+.scrollable-thin::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 2px;
+}
+
+.scrollable-thin::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 2px;
+  transition: background-color 0.3s ease;
+}
+
+.scrollable-thin:hover::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.2);
+}
+
+.scrollable-thin::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.4);
+}
+
+/* Auto-hide variant - only shows on hover */
+.scrollable-auto-hide {
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  scrollbar-width: none; /* Firefox - completely hidden */
+  -ms-overflow-style: none; /* IE/Edge - completely hidden */
+}
+
+.scrollable-auto-hide::-webkit-scrollbar {
+  width: 6px;
+  background: transparent;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  display: block; /* Override global hiding */
+}
+
+.scrollable-auto-hide:hover::-webkit-scrollbar {
+  opacity: 1;
+}
+
+.scrollable-auto-hide::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 3px;
+}
+
+.scrollable-auto-hide::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 3px;
+  transition: background-color 0.3s ease;
+}
+
+.scrollable-auto-hide::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+}
+
+/* Utility classes for common scroll heights */
+.scroll-h-64 { max-height: 16rem; }
+.scroll-h-80 { max-height: 20rem; }
+.scroll-h-96 { max-height: 24rem; }
+.scroll-h-screen { max-height: 100vh; }
+.scroll-h-1/2 { max-height: 50vh; }
+.scroll-h-2/3 { max-height: 66.666667vh; }
+.scroll-h-3/4 { max-height: 75vh; }
+
+/* Smooth scroll for reduced motion users */
+@media (prefers-reduced-motion: reduce) {
+  .scrollable,
+  .scrollable-thin,
+  .scrollable-auto-hide {
+    scroll-behavior: auto;
+  }
+}

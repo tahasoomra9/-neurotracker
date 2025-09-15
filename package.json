@@ -11,6 +11,7 @@
     "build": "vite build",
     "start": "electron .",
     "package": "electron-builder",
+    "build-exe": "vite build && electron-builder",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -36,7 +37,27 @@
       "electron/**/*"
     ],
     "directories": {
-      "buildResources": "assets"
+      "buildResources": "assets",
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
     }
   }
 }

@@ -16,6 +16,7 @@ function createWindow() {
     width: 1440,
     height: 900,
     title: "NeuroTracker: AI Goal Achievement",
+    icon: join(__dirname, "../assets/icon.png"), // Add custom icon
     frame: false, // Remove window frame and controls
     webPreferences: {
       // The preload script is the secure bridge between Node.js and the web content.
