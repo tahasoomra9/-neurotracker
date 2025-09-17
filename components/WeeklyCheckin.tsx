@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { PersonalGoal, FinancialGoal } from '../types';
+import { PersonalGoal, FinancialGoal, WeeklyTask } from '../types';
 import Modal from './common/Modal';
 import Input from './common/Input';
 import Button from './common/Button';
 
 interface WeeklyCheckinProps {
-  personalGoal: PersonalGoal;
+  personalGoals: PersonalGoal[];
   financialGoal: FinancialGoal;
   onClose: () => void;
   onSubmit: (savedAmount: number, completedTasks: string[]) => void;
@@ -17,17 +17,21 @@ const CheckboxIcon = () => (
     </svg>
 )
 
-const WeeklyCheckin: React.FC<WeeklyCheckinProps> = ({ personalGoal, financialGoal, onClose, onSubmit }) => {
+const WeeklyCheckin: React.FC<WeeklyCheckinProps> = ({ personalGoals, financialGoal, onClose, onSubmit }) => {
   const [savedAmount, setSavedAmount] = useState<number>(financialGoal.weeklySavingsTarget);
   const [completedTasks, setCompletedTasks] = useState<string[]>([]);
   
-  const currentTasks = personalGoal.taskHistory[personalGoal.currentWeek - 1] || [];
-  
+  const weekNumber = personalGoals.length > 0 ? personalGoals[0].currentWeek : 1;
+
   useEffect(() => {
-    // Pre-populate completed tasks from the goal state
-    const preCompleted = currentTasks.filter(task => task.completed).map(task => task.id);
+    // Pre-populate with tasks that are already marked as completed in the main UI
+    const preCompleted = personalGoals.flatMap(goal => 
+        (goal.taskHistory[goal.currentWeek - 1] || [])
+            .filter(task => task.completed)
+            .map(task => task.id)
+    );
     setCompletedTasks(preCompleted);
-  }, [personalGoal]);
+  }, [personalGoals]);
 
 
   const handleTaskToggle = (taskId: string) => {
@@ -41,9 +45,27 @@ const WeeklyCheckin: React.FC<WeeklyCheckinProps> = ({ personalGoal, financialGo
     onSubmit(savedAmount, completedTasks);
     onClose();
   };
+  
+  const TaskItem: React.FC<{task: WeeklyTask}> = ({ task }) => {
+      const isChecked = completedTasks.includes(task.id);
+      return (
+        <label key={task.id} className="flex items-center bg-card p-4 rounded-md cursor-pointer hover:bg-accent transition-colors">
+          <div className="relative flex items-center">
+              <input 
+              type="checkbox"
+              checked={isChecked}
+              onChange={() => handleTaskToggle(task.id)}
+              className="appearance-none h-5 w-5 rounded-md border-2 border-input checked:bg-brand checked:border-brand focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-card focus:ring-ring transition-all"
+              />
+              {isChecked && <div className="absolute left-0.5 top-0.5 pointer-events-none"><CheckboxIcon /></div>}
+          </div>
+          <span className={`ml-4 ${isChecked ? 'text-foreground' : 'text-muted-foreground'}`}>{task.description}</span>
+        </label>
+      )
+  }
 
   return (
-    <Modal title={`Week ${personalGoal.currentWeek} Check-in`} onClose={onClose}>
+    <Modal title={`Week ${weekNumber} Check-in`} onClose={onClose}>
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <h3 className="text-lg font-heading mb-2 text-foreground">Financial Progress</h3>
@@ -57,29 +79,26 @@ const WeeklyCheckin: React.FC<WeeklyCheckinProps> = ({ personalGoal, financialGo
         </div>
         <div>
           <h3 className="text-lg font-heading mb-2 text-foreground">Personal Progress</h3>
-          <p className="text-sm text-muted-foreground mb-3">Confirm the tasks you completed for Week {personalGoal.currentWeek}:</p>
-          <div className="space-y-3 max-h-48 overflow-y-auto pr-2">
-            {currentTasks.map(task => {
-              const isChecked = completedTasks.includes(task.id);
+          <p className="text-sm text-muted-foreground mb-3">Confirm the tasks you completed for Week {weekNumber}:</p>
+          <div className="space-y-4 max-h-64 overflow-y-auto pr-2">
+            {personalGoals.map(goal => {
+              const currentTasks = goal.taskHistory[goal.currentWeek - 1] || [];
+              if (currentTasks.length === 0) return null;
+
               return (
-              <label key={task.id} className="flex items-center bg-card p-4 rounded-md cursor-pointer hover:bg-accent transition-colors">
-                <div className="relative flex items-center">
-                    <input 
-                    type="checkbox"
-                    checked={isChecked}
-                    onChange={() => handleTaskToggle(task.id)}
-                    className="appearance-none h-5 w-5 rounded-md border-2 border-input checked:bg-brand checked:border-brand focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-card focus:ring-ring transition-all"
-                    />
-                    {isChecked && <div className="absolute left-0.5 top-0.5 pointer-events-none"><CheckboxIcon /></div>}
+                <div key={goal.id}>
+                    <h4 className="font-semibold text-md text-foreground mb-2 pl-1">{goal.description}</h4>
+                    <div className="space-y-3">
+                      {currentTasks.map(task => <TaskItem key={task.id} task={task} />)}
+                    </div>
                 </div>
-                <span className={`ml-4 ${isChecked ? 'text-foreground' : 'text-muted-foreground'}`}>{task.description}</span>
-              </label>
-            )})}
+              )
+            })}
           </div>
         </div>
         <div className="flex justify-end pt-4 space-x-4">
             <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-            <Button type="submit" variant="primary">Complete Week & Get New Plan</Button>
+            <Button type="submit" variant="primary">Complete Week & Get New Plans</Button>
         </div>
       </form>
     </Modal>

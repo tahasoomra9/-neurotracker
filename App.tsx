@@ -20,7 +20,7 @@ const App: React.FC = () => {
   const [insights, setInsights] = useState<AIInsight[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  
+
   // UI state management
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [loadingMessage, setLoadingMessage] = useState<string>('Initializing...');
@@ -43,7 +43,7 @@ const App: React.FC = () => {
       setTransactions(transactions || []);
       setNotifications(notifications || []);
     }
-    
+
     // Restore user preferences
     const savedTheme = localStorage.getItem('neuroTrackerTheme');
     const initialTheme = savedTheme ? JSON.parse(savedTheme) : 'dark';
@@ -51,12 +51,12 @@ const App: React.FC = () => {
 
     const savedUsername = localStorage.getItem('neuroTrackerUsername');
     if (savedUsername) {
-        setUsername(JSON.parse(savedUsername));
+      setUsername(JSON.parse(savedUsername));
     }
 
     setIsLoading(false);
   }, []);
-  
+
   // Apply theme changes to the document
   useEffect(() => {
     const root = document.documentElement;
@@ -78,7 +78,7 @@ const App: React.FC = () => {
   }) => {
     localStorage.setItem('neuroTrackerData', JSON.stringify(data));
   };
-  
+
   const handleFinancialGoalSetup = async (data: FinancialGoalSetupData) => {
     setIsLoading(true);
     setLoadingMessage('AI is analyzing your financial goal...');
@@ -91,7 +91,7 @@ const App: React.FC = () => {
       };
       const updatedGoals = [...financialGoals, goalWithId];
       const newUserProfile = { income: data.income, housingCost: data.housingCost };
-      
+
       setUserProfile(newUserProfile);
       setFinancialGoals(updatedGoals);
       saveDataToLocalStorage({ userProfile: newUserProfile, financialGoals: updatedGoals, personalGoals, insights, transactions, notifications });
@@ -107,110 +107,226 @@ const App: React.FC = () => {
     setIsLoading(true);
     setLoadingMessage('AI is analyzing your personal goal...');
     try {
-        const { newPersonalGoal } = await getPersonalGoalAnalysis(data);
-        const goalWithId: PersonalGoal = {
-            ...newPersonalGoal,
-            id: crypto.randomUUID(),
-            status: 'active',
-        };
-        const updatedGoals = [...personalGoals, goalWithId];
-        setPersonalGoals(updatedGoals);
-        saveDataToLocalStorage({ userProfile, financialGoals, personalGoals: updatedGoals, insights, transactions, notifications });
+      const { newPersonalGoal } = await getPersonalGoalAnalysis(data);
+      const goalWithId: PersonalGoal = {
+        ...newPersonalGoal,
+        id: crypto.randomUUID(),
+        status: 'active',
+      };
+      const updatedGoals = [...personalGoals, goalWithId];
+      setPersonalGoals(updatedGoals);
+      saveDataToLocalStorage({ userProfile, financialGoals, personalGoals: updatedGoals, insights, transactions, notifications });
     } catch (error) {
-        console.error("Personal goal setup analysis failed:", error);
-        alert("There was an error analyzing your personal goal. Please try again.");
+      console.error("Personal goal setup analysis failed:", error);
+      alert("There was an error analyzing your personal goal. Please try again.");
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const handleWeeklyCheckin = async (financialGoalId: string, personalGoalId: string, savedAmount: number, completedTasks: string[]) => {
+  const handleWeeklyCheckin = async (financialGoalId: string, personalGoalIds: string[], savedAmount: number, allCompletedTaskIds: string[]) => {
     const financialGoal = financialGoals.find(g => g.id === financialGoalId);
-    let personalGoal = personalGoals.find(g => g.id === personalGoalId);
-    if (!financialGoal || !personalGoal) return;
+    const goalsToCheckin = personalGoals.filter(g => personalGoalIds.includes(g.id));
 
-    // Use the already completed tasks from the state for the current week
-    const currentWeekIndex = personalGoal.currentWeek - 1;
-    const completedTaskIdsFromState = (personalGoal.taskHistory[currentWeekIndex] || [])
-        .filter(task => task.completed)
-        .map(task => task.id);
+    if (!financialGoal || goalsToCheckin.length === 0) return;
+
+
+
+    // First, update the current task completion states before calling the AI service
+    const updatedPersonalGoalsWithCompletions = personalGoals.map(goal => {
+      if (!personalGoalIds.includes(goal.id)) return goal;
+
+      const updatedGoal = { ...goal };
+      const currentWeekIndex = updatedGoal.currentWeek - 1;
+
+      if (updatedGoal.taskHistory[currentWeekIndex]) {
+        updatedGoal.taskHistory[currentWeekIndex] = updatedGoal.taskHistory[currentWeekIndex].map(task => {
+          const shouldBeCompleted = allCompletedTaskIds.includes(task.id);
+          return { ...task, completed: shouldBeCompleted };
+        });
+      }
+
+      return updatedGoal;
+    });
+
+    // Update the state immediately to reflect task completions
+    setPersonalGoals(updatedPersonalGoalsWithCompletions);
+
+    // Get the updated goals for the AI service call
+    const updatedGoalsToCheckin = updatedPersonalGoalsWithCompletions.filter(g => personalGoalIds.includes(g.id));
 
     setIsLoading(true);
-    setLoadingMessage('AI is generating your weekly plan...');
+    setLoadingMessage('AI is generating your weekly plans...');
     try {
-        const { updatedFinancialGoal, updatedPersonalGoal, newInsight } = await getWeeklyUpdate(
-            financialGoal,
-            personalGoal,
-            savedAmount,
-            completedTaskIdsFromState
-        );
-        
-        const newNotifications: Notification[] = [];
+      const updatePromises = updatedGoalsToCheckin.map(pGoal => {
+        const currentWeekTasks = pGoal.taskHistory[pGoal.currentWeek - 1] || [];
+        const currentWeekTaskIds = new Set(currentWeekTasks.map(t => t.id));
+        const completedIdsForThisGoal = allCompletedTaskIds.filter(id => currentWeekTaskIds.has(id));
 
-        // New Insight Notification
-        if (newInsight) {
-            newNotifications.push({
-                id: crypto.randomUUID(),
-                type: 'insight',
-                title: 'New AI Insight',
-                message: newInsight.text,
-                date: newInsight.date,
-                read: false,
-            });
-        }
+        // Pass the original financial goal for context, but we'll only use the first updated result later.
+        return getWeeklyUpdate(financialGoal, pGoal, savedAmount, completedIdsForThisGoal);
+      });
 
-        // Financial Milestone Notification
-        const milestones = [25, 50, 75, 100];
-        const prevProgress = updatedFinancialGoal.targetAmount > 0 ? (financialGoal.currentAmount / updatedFinancialGoal.targetAmount) * 100 : 0;
-        const newProgress = updatedFinancialGoal.targetAmount > 0 ? (updatedFinancialGoal.currentAmount / updatedFinancialGoal.targetAmount) * 100 : 0;
+      const results = await Promise.all(updatePromises);
+      if (!results || results.length === 0) throw new Error("No results from weekly update.");
 
-        milestones.forEach(milestone => {
-            if (newProgress >= milestone && prevProgress < milestone) {
-                newNotifications.push({
-                    id: crypto.randomUUID(),
-                    type: 'milestone',
-                    title: 'Milestone Reached!',
-                    message: `You've reached ${milestone}% of your '${updatedFinancialGoal.itemName}' goal!`,
-                    date: new Date().toISOString(),
-                    read: false,
-                    relatedGoalId: updatedFinancialGoal.id,
-                    relatedGoalType: 'financial',
-                });
+      // --- Aggregate State Updates ---
+      // 1. Financial Goal (only use the update from the first result to avoid multiple increments)
+      const updatedFinancialGoal = results[0].updatedFinancialGoal;
+
+      // 2. Personal Goals - Preserve task completion states from the current week
+      const updatedPersonalGoalsMap = new Map(results.map(r => [r.updatedPersonalGoal.id, r.updatedPersonalGoal]));
+      const finalPersonalGoals = updatedPersonalGoalsWithCompletions.map(goal => {
+        const aiUpdatedGoal = updatedPersonalGoalsMap.get(goal.id);
+        if (!aiUpdatedGoal) return goal;
+
+        // Preserve the current week's task completion states and custom tasks
+        const preservedGoal = { ...aiUpdatedGoal };
+        const currentWeekIndex = goal.currentWeek - 1;
+
+        // More robust task preservation - merge by task ID and preserve custom tasks
+        if (goal.taskHistory[currentWeekIndex] && preservedGoal.taskHistory[currentWeekIndex]) {
+          console.log(`\n=== TASK PRESERVATION FOR ${goal.description} ===`);
+          console.log('Pre-update tasks:', goal.taskHistory[currentWeekIndex].map(t => ({
+            id: t.id,
+            desc: t.description,
+            completed: t.completed,
+            isCustom: t.isCustom
+          })));
+          console.log('AI returned tasks:', preservedGoal.taskHistory[currentWeekIndex].map(t => ({
+            id: t.id,
+            desc: t.description,
+            completed: t.completed,
+            isCustom: t.isCustom
+          })));
+
+          const preUpdateTasksMap = new Map(goal.taskHistory[currentWeekIndex].map(t => [t.id, t]));
+
+          // Update the AI tasks with our completion states, preserving any new tasks the AI might have added
+          preservedGoal.taskHistory[currentWeekIndex] = preservedGoal.taskHistory[currentWeekIndex].map(aiTask => {
+            const preUpdateTask = preUpdateTasksMap.get(aiTask.id);
+            if (preUpdateTask) {
+              console.log(`Preserving completion for task ${aiTask.id}: ${preUpdateTask.completed}`);
+              // Use the completion state from our pre-update task
+              return { ...aiTask, completed: preUpdateTask.completed };
             }
-        });
-        
-        // Personal Goal Warning Notification
-        const totalTasksCount = (personalGoal.taskHistory[currentWeekIndex] || []).length;
-        const completionRate = totalTasksCount > 0 ? completedTaskIdsFromState.length / totalTasksCount : 1;
-        if (completionRate < 0.4 && totalTasksCount > 0) {
-            newNotifications.push({
-                id: crypto.randomUUID(),
-                type: 'warning',
-                title: 'Goal Off-Track',
-                message: `You completed less than 40% of your tasks for '${personalGoal.description}'. Let's get back on track this week!`,
-                date: new Date().toISOString(),
-                read: false,
-                relatedGoalId: personalGoal.id,
-                relatedGoalType: 'personal',
-            });
-        }
-        
-        const allNotifications = newNotifications.length > 0 ? [...newNotifications, ...notifications] : notifications;
-        const newInsights = newInsight ? [newInsight, ...insights] : insights;
-        const updatedFinancialGoals = financialGoals.map(g => g.id === financialGoalId ? updatedFinancialGoal : g);
-        const updatedPersonalGoals = personalGoals.map(g => g.id === personalGoalId ? updatedPersonalGoal : g);
+            console.log(`Keeping AI task as-is: ${aiTask.id}`);
+            // Keep AI task as-is if it's new
+            return aiTask;
+          });
 
-        setFinancialGoals(updatedFinancialGoals);
-        setPersonalGoals(updatedPersonalGoals);
-        setInsights(newInsights);
-        setNotifications(allNotifications);
-        saveDataToLocalStorage({ userProfile, financialGoals: updatedFinancialGoals, personalGoals: updatedPersonalGoals, insights: newInsights, transactions, notifications: allNotifications });
+          // Add any tasks that were in pre-update but not in AI response (custom tasks)
+          const aiTaskIds = new Set(preservedGoal.taskHistory[currentWeekIndex].map(t => t.id));
+          const missingTasks = goal.taskHistory[currentWeekIndex].filter(t => !aiTaskIds.has(t.id));
+          console.log('Missing tasks to add back:', missingTasks.map(t => ({
+            id: t.id,
+            desc: t.description,
+            completed: t.completed,
+            isCustom: t.isCustom
+          })));
+          preservedGoal.taskHistory[currentWeekIndex].push(...missingTasks);
+
+          console.log('Final tasks after preservation:', preservedGoal.taskHistory[currentWeekIndex].map(t => ({
+            id: t.id,
+            desc: t.description,
+            completed: t.completed,
+            isCustom: t.isCustom
+          })));
+        } else if (goal.taskHistory[currentWeekIndex] && !preservedGoal.taskHistory[currentWeekIndex]) {
+          console.log(`AI returned no tasks for current week, keeping all existing tasks for ${goal.description}`);
+          // If AI didn't return any tasks for current week, keep all our tasks
+          preservedGoal.taskHistory[currentWeekIndex] = goal.taskHistory[currentWeekIndex];
+        }
+
+        return preservedGoal;
+      });
+
+      // 3. Insights
+      const newInsights = results.map(r => r.newInsight).filter((insight): insight is AIInsight => !!insight);
+      const finalInsights = [...newInsights, ...insights];
+
+      // --- Generate Notifications ---
+      const newNotifications: Notification[] = [];
+
+      // Financial Milestone Notification (checked once)
+      const milestones = [25, 50, 75, 100];
+      const prevProgress = financialGoal.targetAmount > 0 ? (financialGoal.currentAmount / financialGoal.targetAmount) * 100 : 0;
+      const newProgress = updatedFinancialGoal.targetAmount > 0 ? (updatedFinancialGoal.currentAmount / updatedFinancialGoal.targetAmount) * 100 : 0;
+
+      milestones.forEach(milestone => {
+        if (newProgress >= milestone && prevProgress < milestone) {
+          newNotifications.push({
+            id: crypto.randomUUID(),
+            type: 'milestone',
+            title: 'Milestone Reached!',
+            message: `You've reached ${milestone}% of your '${updatedFinancialGoal.itemName}' goal!`,
+            date: new Date().toISOString(),
+            read: false,
+            relatedGoalId: updatedFinancialGoal.id,
+            relatedGoalType: 'financial',
+          });
+        }
+      });
+
+      // Personal Goal Warning Notifications (checked for each updated goal)
+      results.forEach(({ updatedPersonalGoal }) => {
+        const lastCompletedWeek = updatedPersonalGoal.completionHistory[updatedPersonalGoal.completionHistory.length - 1];
+        if (lastCompletedWeek && lastCompletedWeek.totalTasks > 0) {
+          const completionRate = lastCompletedWeek.completedTasks / lastCompletedWeek.totalTasks;
+          if (completionRate < 0.4) {
+            newNotifications.push({
+              id: crypto.randomUUID(),
+              type: 'warning',
+              title: 'Goal Off-Track',
+              message: `You completed less than 40% of your tasks for '${updatedPersonalGoal.description}'. Let's get back on track this week!`,
+              date: new Date().toISOString(),
+              read: false,
+              relatedGoalId: updatedPersonalGoal.id,
+              relatedGoalType: 'personal',
+            });
+          }
+        }
+      });
+
+      newInsights.forEach(insight => {
+        newNotifications.push({
+          id: crypto.randomUUID(),
+          type: 'insight',
+          title: 'New AI Insight',
+          message: insight.text,
+          date: insight.date,
+          read: false,
+        });
+      });
+
+      const finalNotifications = [...newNotifications, ...notifications];
+      const finalFinancialGoals = financialGoals.map(g => g.id === financialGoalId ? updatedFinancialGoal : g);
+
+      // --- Set Final State ---
+      console.log('\n=== SETTING FINAL STATE ===');
+      finalPersonalGoals.forEach(goal => {
+        const currentWeekTasks = goal.taskHistory[goal.currentWeek - 1] || [];
+        console.log(`Final state for "${goal.description}":`, currentWeekTasks.map(t => ({
+          id: t.id,
+          desc: t.description,
+          completed: t.completed,
+          isCustom: t.isCustom
+        })));
+      });
+
+      setFinancialGoals(finalFinancialGoals);
+      setPersonalGoals(finalPersonalGoals);
+      setInsights(finalInsights);
+      setNotifications(finalNotifications);
+      saveDataToLocalStorage({ userProfile, financialGoals: finalFinancialGoals, personalGoals: finalPersonalGoals, insights: finalInsights, transactions, notifications: finalNotifications });
+
+      console.log('=== STATE SAVED TO LOCALSTORAGE ===');
 
     } catch (error) {
-        console.error("Weekly update failed:", error);
-        alert("There was an error updating your weekly progress. Please try again.");
+      console.error("Weekly update failed:", error);
+      alert("There was an error updating your weekly progress. Please try again.");
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -223,26 +339,29 @@ const App: React.FC = () => {
           completed: false,
           isCustom: true,
         };
-        
+
         const updatedGoal = { ...goal };
         const currentWeekIndex = updatedGoal.currentWeek - 1;
-        
+
         if (!updatedGoal.taskHistory[currentWeekIndex]) {
           updatedGoal.taskHistory[currentWeekIndex] = [];
         }
 
         updatedGoal.taskHistory[currentWeekIndex] = [...updatedGoal.taskHistory[currentWeekIndex], newCustomTask];
-  
+
         return updatedGoal;
       }
       return goal;
     });
-  
+
     setPersonalGoals(updatedPersonalGoals);
     saveDataToLocalStorage({ userProfile, financialGoals, personalGoals: updatedPersonalGoals, insights, transactions, notifications });
   };
-  
+
   const handleToggleTaskCompletion = (goalId: string, taskId: string) => {
+    console.log(`\n=== TOGGLING TASK COMPLETION ===`);
+    console.log(`Goal ID: ${goalId}, Task ID: ${taskId}`);
+
     const updatedPersonalGoals = personalGoals.map(goal => {
       if (goal.id === goalId) {
         const updatedGoal = { ...goal };
@@ -251,6 +370,7 @@ const App: React.FC = () => {
         if (updatedGoal.taskHistory[currentWeekIndex]) {
           updatedGoal.taskHistory[currentWeekIndex] = updatedGoal.taskHistory[currentWeekIndex].map(task => {
             if (task.id === taskId) {
+              console.log(`Toggling task "${task.description}" from ${task.completed} to ${!task.completed}`);
               return { ...task, completed: !task.completed };
             }
             return task;
@@ -267,16 +387,16 @@ const App: React.FC = () => {
 
   const handleDeleteTask = (goalId: string, taskId: string) => {
     const updatedPersonalGoals = personalGoals.map(goal => {
-        if (goal.id === goalId) {
-            const updatedGoal = { ...goal };
-            const currentWeekIndex = updatedGoal.currentWeek - 1;
+      if (goal.id === goalId) {
+        const updatedGoal = { ...goal };
+        const currentWeekIndex = updatedGoal.currentWeek - 1;
 
-            if (updatedGoal.taskHistory[currentWeekIndex]) {
-                updatedGoal.taskHistory[currentWeekIndex] = updatedGoal.taskHistory[currentWeekIndex].filter(task => task.id !== taskId);
-            }
-            return updatedGoal;
+        if (updatedGoal.taskHistory[currentWeekIndex]) {
+          updatedGoal.taskHistory[currentWeekIndex] = updatedGoal.taskHistory[currentWeekIndex].filter(task => task.id !== taskId);
         }
-        return goal;
+        return updatedGoal;
+      }
+      return goal;
     });
 
     setPersonalGoals(updatedPersonalGoals);
@@ -285,17 +405,17 @@ const App: React.FC = () => {
 
 
   const handleToggleGoalStatus = (id: string, type: 'financial' | 'personal', newStatus: 'active' | 'paused' | 'completed') => {
-      let updatedFinancialGoals = financialGoals;
-      let updatedPersonalGoals = personalGoals;
+    let updatedFinancialGoals = financialGoals;
+    let updatedPersonalGoals = personalGoals;
 
-      if (type === 'financial') {
-        updatedFinancialGoals = financialGoals.map(g => g.id === id ? { ...g, status: newStatus } : g);
-        setFinancialGoals(updatedFinancialGoals);
-      } else {
-        updatedPersonalGoals = personalGoals.map(g => g.id === id ? { ...g, status: newStatus } : g);
-        setPersonalGoals(updatedPersonalGoals);
-      }
-      saveDataToLocalStorage({ userProfile, financialGoals: updatedFinancialGoals, personalGoals: updatedPersonalGoals, insights, transactions, notifications });
+    if (type === 'financial') {
+      updatedFinancialGoals = financialGoals.map(g => g.id === id ? { ...g, status: newStatus } : g);
+      setFinancialGoals(updatedFinancialGoals);
+    } else {
+      updatedPersonalGoals = personalGoals.map(g => g.id === id ? { ...g, status: newStatus } : g);
+      setPersonalGoals(updatedPersonalGoals);
+    }
+    saveDataToLocalStorage({ userProfile, financialGoals: updatedFinancialGoals, personalGoals: updatedPersonalGoals, insights, transactions, notifications });
   };
 
   const handleDeleteGoal = (id: string, type: 'financial' | 'personal') => {
@@ -303,15 +423,15 @@ const App: React.FC = () => {
     let updatedPersonalGoals = personalGoals;
 
     if (type === 'financial') {
-        updatedFinancialGoals = financialGoals.filter(g => g.id !== id);
-        setFinancialGoals(updatedFinancialGoals);
+      updatedFinancialGoals = financialGoals.filter(g => g.id !== id);
+      setFinancialGoals(updatedFinancialGoals);
     } else {
-        updatedPersonalGoals = personalGoals.filter(g => g.id !== id);
-        setPersonalGoals(updatedPersonalGoals);
+      updatedPersonalGoals = personalGoals.filter(g => g.id !== id);
+      setPersonalGoals(updatedPersonalGoals);
     }
     saveDataToLocalStorage({ userProfile, financialGoals: updatedFinancialGoals, personalGoals: updatedPersonalGoals, insights, transactions, notifications });
   };
-  
+
   const handleReset = () => {
     localStorage.removeItem('neuroTrackerData');
     localStorage.removeItem('neuroTrackerUsername');
@@ -335,13 +455,13 @@ const App: React.FC = () => {
     setInsights(demoInsights);
     setTransactions(demoTransactions);
     setNotifications([]);
-    saveDataToLocalStorage({ 
-        userProfile: demoUserProfile, 
-        financialGoals: demoFinancialGoals, 
-        personalGoals: demoPersonalGoals, 
-        insights: demoInsights, 
-        transactions: demoTransactions,
-        notifications: [],
+    saveDataToLocalStorage({
+      userProfile: demoUserProfile,
+      financialGoals: demoFinancialGoals,
+      personalGoals: demoPersonalGoals,
+      insights: demoInsights,
+      transactions: demoTransactions,
+      notifications: [],
     });
     setActiveView('dashboard');
     setIsSidebarOpen(false);
@@ -379,121 +499,121 @@ const App: React.FC = () => {
   };
 
   const handleMarkAllNotificationsAsRead = () => {
-      const updatedNotifications = notifications.map(n => ({ ...n, read: true }));
-      setNotifications(updatedNotifications);
-      saveDataToLocalStorage({ userProfile, financialGoals, personalGoals, insights, transactions, notifications: updatedNotifications });
+    const updatedNotifications = notifications.map(n => ({ ...n, read: true }));
+    setNotifications(updatedNotifications);
+    saveDataToLocalStorage({ userProfile, financialGoals, personalGoals, insights, transactions, notifications: updatedNotifications });
   };
 
   const handleClearReadNotifications = () => {
-      const unreadNotifications = notifications.filter(n => !n.read);
-      setNotifications(unreadNotifications);
-      saveDataToLocalStorage({ userProfile, financialGoals, personalGoals, insights, transactions, notifications: unreadNotifications });
+    const unreadNotifications = notifications.filter(n => !n.read);
+    setNotifications(unreadNotifications);
+    saveDataToLocalStorage({ userProfile, financialGoals, personalGoals, insights, transactions, notifications: unreadNotifications });
   };
 
   const renderContent = () => {
-     if (isLoading && financialGoals.length === 0 && !userProfile) {
-        return (
-            <div className="fixed inset-0 bg-background/80 flex flex-col justify-center items-center z-50">
-              <Spinner />
-              <p className="mt-4 text-lg text-muted-foreground font-heading">{loadingMessage}</p>
-            </div>
-        );
-     }
+    if (isLoading && financialGoals.length === 0 && !userProfile) {
+      return (
+        <div className="fixed inset-0 bg-background/80 flex flex-col justify-center items-center z-50">
+          <Spinner />
+          <p className="mt-4 text-lg text-muted-foreground font-heading">{loadingMessage}</p>
+        </div>
+      );
+    }
 
-     return (
-        <>
-            {isLoading && (
-                 <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex flex-col justify-center items-center z-50 transition-opacity duration-300">
-                    <Spinner />
-                    <p className="mt-4 text-lg text-muted-foreground font-heading">{loadingMessage}</p>
-                </div>
-            )}
-            <div className="flex min-h-screen bg-background text-foreground font-sans">
-                <Sidebar 
-                    onLogout={handleReset} 
-                    isOpen={isSidebarOpen} 
-                    setIsOpen={setIsSidebarOpen}
-                    theme={theme}
-                    onToggleTheme={handleToggleTheme}
-                    activeView={activeView}
-                    onNavigate={setActiveView}
-                    onLoadDemoData={handleLoadDemoData}
+    return (
+      <>
+        {isLoading && (
+          <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex flex-col justify-center items-center z-50 transition-opacity duration-300">
+            <Spinner />
+            <p className="mt-4 text-lg text-muted-foreground font-heading">{loadingMessage}</p>
+          </div>
+        )}
+        <div className="flex min-h-screen bg-background text-foreground font-sans">
+          <Sidebar
+            onLogout={handleReset}
+            isOpen={isSidebarOpen}
+            setIsOpen={setIsSidebarOpen}
+            theme={theme}
+            onToggleTheme={handleToggleTheme}
+            activeView={activeView}
+            onNavigate={setActiveView}
+            onLoadDemoData={handleLoadDemoData}
+          />
+          <div className="flex-1 flex flex-col lg:pl-[200px]">
+            <Header
+              username={username}
+              onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+              onUpdateUsername={handleUpdateUsername}
+              notifications={notifications}
+              onMarkAsRead={handleMarkNotificationAsRead}
+              onMarkAllAsRead={handleMarkAllNotificationsAsRead}
+              onClearRead={handleClearReadNotifications}
+              currentPage={activeView === 'dashboard' ? 'Dashboard' : activeView === 'goals' ? 'Goals' : activeView === 'insights' ? 'Insights' : 'Dashboard'}
+              currentSubPage={
+                activeView === 'goals'
+                  ? (currentGoalsTab === 'financial' ? 'Finance' : 'Personal')
+                  : activeView === 'insights' && currentInsightsFilter !== 'all'
+                    ? (currentInsightsFilter === 'financial' ? 'Financial'
+                      : currentInsightsFilter === 'personal' ? 'Personal'
+                        : currentInsightsFilter === 'cross-goal' ? 'Cross-Goal'
+                          : currentInsightsFilter === 'motivational' ? 'Motivational'
+                            : undefined)
+                    : undefined
+              }
+              onNavigate={(page) => {
+                const pageMap: { [key: string]: AppView } = {
+                  'Dashboard': 'dashboard',
+                  'Goals': 'goals',
+                  'Insights': 'insights'
+                };
+                const targetView = pageMap[page];
+                if (targetView) {
+                  setActiveView(targetView);
+                }
+              }}
+            />
+            <main className="flex-1 p-4 sm:p-6 overflow-y-auto">
+              {activeView === 'dashboard' && (
+                <Dashboard
+                  userProfile={userProfile}
+                  financialGoals={financialGoals}
+                  personalGoals={personalGoals}
+                  insights={insights}
+                  onWeeklyCheckin={handleWeeklyCheckin}
+                  onSetupFinancialGoal={handleFinancialGoalSetup}
+                  onSetupPersonalGoal={handlePersonalGoalSetup}
+                  onToggleGoalStatus={handleToggleGoalStatus}
+                  onAddCustomTask={handleAddCustomTask}
+                  onToggleTaskCompletion={handleToggleTaskCompletion}
+                  onDeleteTask={handleDeleteTask}
                 />
-                <div className="flex-1 flex flex-col lg:pl-[200px]">
-                    <Header 
-                        username={username} 
-                        onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-                        onUpdateUsername={handleUpdateUsername}
-                        notifications={notifications}
-                        onMarkAsRead={handleMarkNotificationAsRead}
-                        onMarkAllAsRead={handleMarkAllNotificationsAsRead}
-                        onClearRead={handleClearReadNotifications}
-                        currentPage={activeView === 'dashboard' ? 'Dashboard' : activeView === 'goals' ? 'Goals' : activeView === 'insights' ? 'Insights' : 'Dashboard'}
-                        currentSubPage={
-                            activeView === 'goals' 
-                                ? (currentGoalsTab === 'financial' ? 'Finance' : 'Personal')
-                                : activeView === 'insights' && currentInsightsFilter !== 'all'
-                                    ? (currentInsightsFilter === 'financial' ? 'Financial' 
-                                        : currentInsightsFilter === 'personal' ? 'Personal'
-                                        : currentInsightsFilter === 'cross-goal' ? 'Cross-Goal'
-                                        : currentInsightsFilter === 'motivational' ? 'Motivational'
-                                        : undefined)
-                                    : undefined
-                        }
-                        onNavigate={(page) => {
-                            const pageMap: { [key: string]: AppView } = {
-                                'Dashboard': 'dashboard',
-                                'Goals': 'goals',
-                                'Insights': 'insights'
-                            };
-                            const targetView = pageMap[page];
-                            if (targetView) {
-                                setActiveView(targetView);
-                            }
-                        }}
-                    />
-                    <main className="flex-1 p-4 sm:p-6 overflow-y-auto">
-                        {activeView === 'dashboard' && (
-                            <Dashboard 
-                                userProfile={userProfile}
-                                financialGoals={financialGoals}
-                                personalGoals={personalGoals}
-                                insights={insights}
-                                onWeeklyCheckin={handleWeeklyCheckin}
-                                onSetupFinancialGoal={handleFinancialGoalSetup}
-                                onSetupPersonalGoal={handlePersonalGoalSetup}
-                                onToggleGoalStatus={handleToggleGoalStatus}
-                                onAddCustomTask={handleAddCustomTask}
-                                onToggleTaskCompletion={handleToggleTaskCompletion}
-                                onDeleteTask={handleDeleteTask}
-                            />
-                        )}
-                        {activeView === 'goals' && (
-                            <GoalsPage
-                                userProfile={userProfile}
-                                financialGoals={financialGoals}
-                                personalGoals={personalGoals}
-                                transactions={transactions}
-                                onToggleGoalStatus={handleToggleGoalStatus}
-                                onDeleteGoal={handleDeleteGoal}
-                                onSetupFinancialGoal={handleFinancialGoalSetup}
-                                onSetupPersonalGoal={handlePersonalGoalSetup}
-                                onAddTransaction={handleAddTransaction}
-                                onDeleteTransaction={handleDeleteTransaction}
-                                onTabChange={setCurrentGoalsTab}
-                            />
-                        )}
-                         {activeView === 'insights' && (
-                            <InsightsPage 
-                                insights={insights} 
-                                onFilterChange={setCurrentInsightsFilter}
-                            />
-                        )}
-                    </main>
-                </div>
-            </div>
-        </>
-     )
+              )}
+              {activeView === 'goals' && (
+                <GoalsPage
+                  userProfile={userProfile}
+                  financialGoals={financialGoals}
+                  personalGoals={personalGoals}
+                  transactions={transactions}
+                  onToggleGoalStatus={handleToggleGoalStatus}
+                  onDeleteGoal={handleDeleteGoal}
+                  onSetupFinancialGoal={handleFinancialGoalSetup}
+                  onSetupPersonalGoal={handlePersonalGoalSetup}
+                  onAddTransaction={handleAddTransaction}
+                  onDeleteTransaction={handleDeleteTransaction}
+                  onTabChange={setCurrentGoalsTab}
+                />
+              )}
+              {activeView === 'insights' && (
+                <InsightsPage
+                  insights={insights}
+                  onFilterChange={setCurrentInsightsFilter}
+                />
+              )}
+            </main>
+          </div>
+        </div>
+      </>
+    )
   }
 
   return renderContent();

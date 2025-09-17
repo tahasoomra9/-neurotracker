@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useLayoutEffect, useId } from 'react';
+import React, { useState, useEffect, useRef, useLayoutEffect, useId, useMemo } from 'react';
 import { FinancialGoal, PersonalGoal, AIInsight, UserProfile, GoalHealth, WeeklyTask } from '../../types';
 import Button from '../common/Button';
 
@@ -178,23 +178,39 @@ interface MultiGoalBlockProps<T extends FinancialGoal | PersonalGoal> {
 function MultiGoalBlock<T extends FinancialGoal | PersonalGoal>({ 
     title, goals, onSetup, onToggleStatus, getGoalHealth, renderGoalDetails, goalType, setupMessage, setupCta 
 }: MultiGoalBlockProps<T>) {
-    const activeGoals = goals.filter(g => g.status === 'active');
+    const [searchQuery, setSearchQuery] = useState("");
+    const activeGoals = useMemo(() => goals.filter(g => g.status === 'active'), [goals]);
+
+    const filteredActiveGoals = useMemo(() => {
+        if (!searchQuery) return activeGoals;
+        return activeGoals.filter(g =>
+            ('itemName' in g ? g.itemName : g.description)
+                .toLowerCase()
+                .includes(searchQuery.toLowerCase())
+        );
+    }, [activeGoals, searchQuery]);
+
     const [activeGoalId, setActiveGoalId] = useState<string | null>(null);
+    
+    useEffect(() => {
+        const currentGoalIsVisible = filteredActiveGoals.some(g => g.id === activeGoalId);
+
+        if (filteredActiveGoals.length > 0 && !currentGoalIsVisible) {
+            // If current selection is invalid or null, select the first visible goal
+            setActiveGoalId(filteredActiveGoals[0].id);
+        } else if (filteredActiveGoals.length === 0) {
+            // If no goals are visible, deselect
+            setActiveGoalId(null);
+        }
+    }, [filteredActiveGoals, activeGoalId]);
+
 
     const [isDetailsExpanded, setIsDetailsExpanded] = useState(false);
     const [detailsHasOverflow, setDetailsHasOverflow] = useState(false);
     const detailsContentRef = useRef<HTMLDivElement>(null);
     const detailsContentId = useId();
     const DEFAULT_DETAILS_MAX_HEIGHT = 90;
-
-    useEffect(() => {
-        if (activeGoals.length > 0 && !activeGoals.some(g => g.id === activeGoalId)) {
-            setActiveGoalId(activeGoals[0].id);
-        } else if (activeGoals.length === 0) {
-            setActiveGoalId(null);
-        }
-    }, [goals, activeGoals]);
-
+    
     useLayoutEffect(() => {
         setIsDetailsExpanded(false); // Reset on goal change
         if (detailsContentRef.current) {
@@ -206,15 +222,28 @@ function MultiGoalBlock<T extends FinancialGoal | PersonalGoal>({
     }, [activeGoalId, detailsHasOverflow]);
 
 
-    const activeGoal = activeGoals.find(g => g.id === activeGoalId);
+    const activeGoal = filteredActiveGoals.find(g => g.id === activeGoalId);
     
     return (
         <BlockContainer>
-            <div className="flex justify-between items-center mb-1 -mt-1">
+            <div className="flex justify-between items-center mb-1 -mt-1 flex-wrap gap-y-2">
                 <h3 className="text-sm font-semibold tracking-wide uppercase text-muted-foreground">
                     {title}
                 </h3>
                 <div className="flex items-center gap-2">
+                    <div className="relative hidden sm:block">
+                        <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                        </svg>
+                        <input
+                            type="text"
+                            placeholder="Search..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="bg-transparent border border-input rounded-md h-8 text-sm pl-8 pr-2 w-32 focus:w-40 transition-all duration-300 ease-in-out focus:outline-none focus:ring-1 focus:ring-ring"
+                            aria-label="Search savings goals"
+                        />
+                    </div>
                     <Button onClick={onSetup} variant="ghost" className="text-xs px-2 py-1 h-auto">+ Add New</Button>
                     {detailsHasOverflow && (
                          <button
@@ -233,7 +262,7 @@ function MultiGoalBlock<T extends FinancialGoal | PersonalGoal>({
             {activeGoals.length > 0 ? (
                 <>
                     <div className="flex items-stretch gap-2 border-b border-border -mx-5 px-5 pb-2 mb-4">
-                        {activeGoals.map(goal => (
+                        {filteredActiveGoals.map(goal => (
                             <GoalTab 
                                 key={goal.id}
                                 label={'itemName' in goal ? goal.itemName : goal.description}
@@ -250,7 +279,20 @@ function MultiGoalBlock<T extends FinancialGoal | PersonalGoal>({
                             style={{ maxHeight: isDetailsExpanded ? detailsContentRef.current?.scrollHeight : `${DEFAULT_DETAILS_MAX_HEIGHT}px` }}
                             className="overflow-hidden transition-all duration-400 ease-in-out"
                         >
-                             {activeGoal ? renderGoalDetails(activeGoal) : <p className="text-sm text-muted-foreground">Select a goal to see details.</p>}
+                            {activeGoal ? (
+                                <div key={activeGoal.id} className="animate-details-in">
+                                    {renderGoalDetails(activeGoal)}
+                                </div>
+                            ) : (
+                                <div className="flex items-center justify-center h-full min-h-[90px]">
+                                    <p className="text-sm text-muted-foreground text-center px-4">
+                                        {searchQuery
+                                            ? "No goals match your search."
+                                            : "Select a goal to see details."
+                                        }
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </>
@@ -477,7 +519,8 @@ export const WeeklyTasksBlock: React.FC<{
     onToggleTaskCompletion: (goalId: string, taskId: string) => void;
     onDeleteTask: (goalId: string, taskId: string) => void;
     onStartCheckin: () => void;
-}> = ({ goals, onAddTask, onToggleTaskCompletion, onDeleteTask, onStartCheckin }) => {
+    isCheckinReady: boolean;
+}> = ({ goals, onAddTask, onToggleTaskCompletion, onDeleteTask, onStartCheckin, isCheckinReady }) => {
     const activeGoals = goals.filter(g => g.status === 'active');
     const [activeGoalId, setActiveGoalId] = useState<string | null>(null);
     const rootRef = useRef<HTMLDivElement>(null);
@@ -536,7 +579,7 @@ export const WeeklyTasksBlock: React.FC<{
         const totalCount = tasksForViewedWeek.length;
         
         return (
-            <div className="p-5">
+            <div className="p-5 flex flex-col flex-1 min-h-0">
                  <div className="flex justify-between items-center mb-4">
                     <button 
                         onClick={() => setViewedWeek(v => v - 1)} 
@@ -572,7 +615,7 @@ export const WeeklyTasksBlock: React.FC<{
                     </div>
                 </div>
 
-                <div className="flex-1 space-y-2 text-sm min-h-[200px] max-h-[40vh] overflow-y-auto pr-2 mb-4">
+                <div className="flex-1 space-y-2 text-sm overflow-y-auto pr-2">
                     {tasksForViewedWeek.length === 0 ? (
                         <p className="text-muted-foreground text-center py-8">No tasks for this week.</p>
                     ) : tasksForViewedWeek.map(task => (
@@ -586,9 +629,9 @@ export const WeeklyTasksBlock: React.FC<{
                     ))}
                 </div>
 
-                <div className="mt-auto pt-4 border-t border-border">
+                <div className="mt-4">
                     {isCurrentWeek && (
-                         <form onSubmit={handleAddTask} className="flex gap-2 mb-3">
+                         <form onSubmit={handleAddTask} className="flex gap-2">
                             <input
                                 type="text"
                                 value={customTask}
@@ -599,21 +642,13 @@ export const WeeklyTasksBlock: React.FC<{
                             <Button type="submit" variant="secondary" className="px-3 py-2 text-xs">Add</Button>
                         </form>
                     )}
-                     <Button 
-                        onClick={onStartCheckin}
-                        disabled={!isCurrentWeek}
-                        variant="primary"
-                        className="w-full"
-                    >
-                       {isCurrentWeek ? 'Start Weekly Check-in' : 'View Current Week to Check-in'}
-                    </Button>
                 </div>
             </div>
         );
     }
     
     return (
-        <div ref={rootRef} className="premium-glass text-foreground flex flex-col">
+        <div ref={rootRef} className="premium-glass text-foreground flex flex-col h-full max-h-[calc(100vh-128px)]">
             <div className="flex justify-between items-center p-5 pb-0">
                 <h3 className="text-lg font-heading text-foreground">Your Weekly Journey</h3>
             </div>
@@ -632,8 +667,20 @@ export const WeeklyTasksBlock: React.FC<{
                 </div>
             )}
             
-            {renderContent()}
+            <div className="flex flex-col flex-1 min-h-0">
+              {renderContent()}
+            </div>
 
+            <div className="p-5 pt-4 border-t border-border mt-auto">
+                <Button 
+                    onClick={onStartCheckin}
+                    disabled={!isCheckinReady}
+                    variant="primary"
+                    className="w-full"
+                >
+                    Start Weekly Check-in
+                </Button>
+            </div>
         </div>
     )
 };

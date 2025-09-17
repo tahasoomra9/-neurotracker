@@ -17,7 +17,7 @@ interface DashboardProps {
   financialGoals: FinancialGoal[];
   personalGoals: PersonalGoal[];
   insights: AIInsight[];
-  onWeeklyCheckin: (financialGoalId: string, personalGoalId: string, savedAmount: number, completedTasks: string[]) => void;
+  onWeeklyCheckin: (financialGoalId: string, personalGoalIds: string[], savedAmount: number, completedTasks: string[]) => void;
   onSetupFinancialGoal: (data: FinancialGoalSetupData) => Promise<void>;
   onSetupPersonalGoal: (data: PersonalGoalSetupData) => Promise<void>;
   onToggleGoalStatus: (id: string, type: 'financial' | 'personal', newStatus: 'active' | 'paused' | 'completed') => void;
@@ -39,7 +39,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   onToggleTaskCompletion,
   onDeleteTask
 }) => {
-  const [goalForCheckin, setGoalForCheckin] = useState<{ financialGoal: FinancialGoal, personalGoal: PersonalGoal} | null>(null);
+  const [goalForCheckin, setGoalForCheckin] = useState<{ financialGoal: FinancialGoal, personalGoals: PersonalGoal[]} | null>(null);
   const [isFinancialSetupOpen, setIsFinancialSetupOpen] = useState(false);
   const [isPersonalSetupOpen, setIsPersonalSetupOpen] = useState(false);
   
@@ -57,19 +57,30 @@ const Dashboard: React.FC<DashboardProps> = ({
   
   const handleStartCheckin = () => {
     const activeFinancialGoal = financialGoals.find(g => g.status === 'active');
-    const activePersonalGoal = personalGoals.find(g => g.status === 'active');
-    if (activeFinancialGoal && activePersonalGoal) {
-      setGoalForCheckin({ financialGoal: activeFinancialGoal, personalGoal: activePersonalGoal });
+    const activePersonalGoals = personalGoals.filter(g => g.status === 'active');
+
+    if (!activeFinancialGoal || activePersonalGoals.length === 0) {
+        alert("You need at least one active financial and personal goal to start a check-in.");
+        return;
+    }
+
+    // Include all active personal goals in the check-in, regardless of their current week
+    // This ensures that goals created after previous check-ins are also included
+    if (activePersonalGoals.length > 0) {
+      setGoalForCheckin({ financialGoal: activeFinancialGoal, personalGoals: activePersonalGoals });
     } else {
-      alert("You need at least one active financial and personal goal to start a check-in.");
+       alert("An unexpected error occurred. Could not find goals for check-in.");
     }
   };
 
   const handleCheckinSubmit = (savedAmount: number, completedTasks: string[]) => {
     if (goalForCheckin) {
-        onWeeklyCheckin(goalForCheckin.financialGoal.id, goalForCheckin.personalGoal.id, savedAmount, completedTasks);
+        const personalGoalIds = goalForCheckin.personalGoals.map(p => p.id);
+        onWeeklyCheckin(goalForCheckin.financialGoal.id, personalGoalIds, savedAmount, completedTasks);
     }
   }
+
+  const isCheckinReady = financialGoals.some(g => g.status === 'active') && personalGoals.some(g => g.status === 'active');
 
   return (
     <>
@@ -82,6 +93,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                 onToggleTaskCompletion={onToggleTaskCompletion}
                 onStartCheckin={handleStartCheckin}
                 onDeleteTask={onDeleteTask}
+                isCheckinReady={isCheckinReady}
             />
         </div>
 
@@ -112,7 +124,7 @@ const Dashboard: React.FC<DashboardProps> = ({
 
       {goalForCheckin && (
         <WeeklyCheckin
-          personalGoal={goalForCheckin.personalGoal}
+          personalGoals={goalForCheckin.personalGoals}
           financialGoal={goalForCheckin.financialGoal}
           onClose={() => setGoalForCheckin(null)}
           onSubmit={handleCheckinSubmit}
