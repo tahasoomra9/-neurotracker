@@ -10,9 +10,9 @@ import { ToastProps } from './components/common/Toast';
 import GoalsPage from './components/goals/GoalsPage';
 import { demoData } from './demoData';
 import InsightsPage from './components/insights/InsightsPage';
+import { DarkVeilBackground } from './src/components/ui/shadcn-io/dark-veil-background';
 
 export type AppView = 'dashboard' | 'goals' | 'insights';
-export type Theme = 'dark' | 'light';
 
 const App: React.FC = () => {
   // Core app state - user data and goals
@@ -27,11 +27,11 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [loadingMessage, setLoadingMessage] = useState<string>('Initializing...');
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
-  const [theme, setTheme] = useState<Theme>('dark');
   const [username, setUsername] = useState<string>('Wanderer');
   const [activeView, setActiveView] = useState<AppView>('dashboard');
   const [currentGoalsTab, setCurrentGoalsTab] = useState<'financial' | 'personal'>('financial');
   const [currentInsightsFilter, setCurrentInsightsFilter] = useState<'all' | 'financial' | 'personal' | 'cross-goal' | 'motivational'>('all');
+  const [performanceMode, setPerformanceMode] = useState<boolean>(false);
 
   // Toast notifications
   const [toasts, setToasts] = useState<ToastProps[]>([]);
@@ -50,9 +50,10 @@ const App: React.FC = () => {
     }
 
     // Restore user preferences
-    const savedTheme = localStorage.getItem('neuroTrackerTheme');
-    const initialTheme = savedTheme ? JSON.parse(savedTheme) : 'dark';
-    setTheme(initialTheme);
+    const savedPerformanceMode = localStorage.getItem('neuroTrackerPerformanceMode');
+    if (savedPerformanceMode) {
+      setPerformanceMode(JSON.parse(savedPerformanceMode));
+    }
 
     const savedUsername = localStorage.getItem('neuroTrackerUsername');
     if (savedUsername) {
@@ -62,16 +63,10 @@ const App: React.FC = () => {
     setIsLoading(false);
   }, []);
 
-  // Apply theme changes to the document
+  // Save performance mode changes
   useEffect(() => {
-    const root = document.documentElement;
-    if (theme === 'light') {
-      root.classList.add('light');
-    } else {
-      root.classList.remove('light');
-    }
-    localStorage.setItem('neuroTrackerTheme', JSON.stringify(theme));
-  }, [theme]);
+    localStorage.setItem('neuroTrackerPerformanceMode', JSON.stringify(performanceMode));
+  }, [performanceMode]);
 
   const saveDataToLocalStorage = (data: {
     userProfile: UserProfile | null,
@@ -455,7 +450,7 @@ const App: React.FC = () => {
   const handleReset = () => {
     localStorage.removeItem('neuroTrackerData');
     localStorage.removeItem('neuroTrackerUsername');
-    localStorage.removeItem('neuroTrackerTheme');
+    localStorage.removeItem('neuroTrackerPerformanceMode');
     setUserProfile(null);
     setFinancialGoals([]);
     setPersonalGoals([]);
@@ -464,7 +459,7 @@ const App: React.FC = () => {
     setNotifications([]);
     setUsername('Wanderer');
     setActiveView('dashboard');
-    setTheme('dark');
+    setPerformanceMode(false);
   }
 
   const handleLoadDemoData = () => {
@@ -487,8 +482,8 @@ const App: React.FC = () => {
     setIsSidebarOpen(false);
   };
 
-  const handleToggleTheme = () => {
-    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+  const handleTogglePerformanceMode = () => {
+    setPerformanceMode(prev => !prev);
   }
 
   const handleUpdateUsername = (newName: string) => {
@@ -581,16 +576,17 @@ const App: React.FC = () => {
             </div>
           </div>
         )}
-        <div className="flex min-h-screen bg-background text-foreground font-sans">
+        <div className={`flex min-h-screen text-foreground font-sans relative ${performanceMode ? 'bg-black' : ''}`}>
+          {!performanceMode && <DarkVeilBackground className="fixed inset-0 -z-10 opacity-30" />}
           <Sidebar
             onLogout={handleReset}
             isOpen={isSidebarOpen}
             setIsOpen={setIsSidebarOpen}
-            theme={theme}
-            onToggleTheme={handleToggleTheme}
             activeView={activeView}
             onNavigate={setActiveView}
             onLoadDemoData={handleLoadDemoData}
+            performanceMode={performanceMode}
+            onTogglePerformanceMode={handleTogglePerformanceMode}
           />
           <div className="flex-1 flex flex-col lg:pl-[200px]">
             <Header
