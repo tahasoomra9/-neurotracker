@@ -5,6 +5,8 @@ import Header from './components/layout/Header';
 import { FinancialGoalSetupData, PersonalGoalSetupData, FinancialGoal, PersonalGoal, AIInsight, UserProfile, WeeklyTask, Transaction, NewTransaction, Notification } from './types';
 import { getFinancialGoalAnalysis, getPersonalGoalAnalysis, getWeeklyUpdate } from './services/geminiService';
 import Spinner from './components/common/Spinner';
+import ToastContainer from './components/common/ToastContainer';
+import { ToastProps } from './components/common/Toast';
 import GoalsPage from './components/goals/GoalsPage';
 import { demoData } from './demoData';
 import InsightsPage from './components/insights/InsightsPage';
@@ -30,6 +32,9 @@ const App: React.FC = () => {
   const [activeView, setActiveView] = useState<AppView>('dashboard');
   const [currentGoalsTab, setCurrentGoalsTab] = useState<'financial' | 'personal'>('financial');
   const [currentInsightsFilter, setCurrentInsightsFilter] = useState<'all' | 'financial' | 'personal' | 'cross-goal' | 'motivational'>('all');
+
+  // Toast notifications
+  const [toasts, setToasts] = useState<ToastProps[]>([]);
 
   // Load saved data when app starts
   useEffect(() => {
@@ -81,7 +86,7 @@ const App: React.FC = () => {
 
   const handleFinancialGoalSetup = async (data: FinancialGoalSetupData) => {
     setIsLoading(true);
-    setLoadingMessage('AI is analyzing your financial goal...');
+    setLoadingMessage('We are analyzing your financial goal...');
     try {
       const { newFinancialGoal } = await getFinancialGoalAnalysis(data);
       const goalWithId: FinancialGoal = {
@@ -97,7 +102,12 @@ const App: React.FC = () => {
       saveDataToLocalStorage({ userProfile: newUserProfile, financialGoals: updatedGoals, personalGoals, insights, transactions, notifications });
     } catch (error) {
       console.error("Financial goal setup analysis failed:", error);
-      alert("There was an error analyzing your financial goal. Please try again.");
+      showToast({
+        type: 'error',
+        title: 'Goal Setup Failed',
+        message: 'There was an error analyzing your financial goal. Please try again.',
+        duration: 6000
+      });
     } finally {
       setIsLoading(false);
     }
@@ -105,7 +115,7 @@ const App: React.FC = () => {
 
   const handlePersonalGoalSetup = async (data: PersonalGoalSetupData) => {
     setIsLoading(true);
-    setLoadingMessage('AI is analyzing your personal goal...');
+    setLoadingMessage('We are creating your personalized plan...');
     try {
       const { newPersonalGoal } = await getPersonalGoalAnalysis(data);
       const goalWithId: PersonalGoal = {
@@ -118,7 +128,12 @@ const App: React.FC = () => {
       saveDataToLocalStorage({ userProfile, financialGoals, personalGoals: updatedGoals, insights, transactions, notifications });
     } catch (error) {
       console.error("Personal goal setup analysis failed:", error);
-      alert("There was an error analyzing your personal goal. Please try again.");
+      showToast({
+        type: 'error',
+        title: 'Goal Setup Failed',
+        message: 'There was an error analyzing your personal goal. Please try again.',
+        duration: 6000
+      });
     } finally {
       setIsLoading(false);
     }
@@ -156,7 +171,7 @@ const App: React.FC = () => {
     const updatedGoalsToCheckin = updatedPersonalGoalsWithCompletions.filter(g => personalGoalIds.includes(g.id));
 
     setIsLoading(true);
-    setLoadingMessage('AI is generating your weekly plans...');
+    setLoadingMessage('We are generating your weekly plans...');
     try {
       const updatePromises = updatedGoalsToCheckin.map(pGoal => {
         const currentWeekTasks = pGoal.taskHistory[pGoal.currentWeek - 1] || [];
@@ -324,7 +339,12 @@ const App: React.FC = () => {
 
     } catch (error) {
       console.error("Weekly update failed:", error);
-      alert("There was an error updating your weekly progress. Please try again.");
+      showToast({
+        type: 'error',
+        title: 'Weekly Update Failed',
+        message: 'There was an error updating your weekly progress. Please try again.',
+        duration: 6000
+      });
     } finally {
       setIsLoading(false);
     }
@@ -510,12 +530,41 @@ const App: React.FC = () => {
     saveDataToLocalStorage({ userProfile, financialGoals, personalGoals, insights, transactions, notifications: unreadNotifications });
   };
 
+  const handleClearAllInsights = () => {
+    setInsights([]);
+    saveDataToLocalStorage({ userProfile, financialGoals, personalGoals, insights: [], transactions, notifications });
+  };
+
+  const handleClearInsightsByType = (type: AIInsight['type']) => {
+    const filteredInsights = insights.filter(insight => insight.type !== type);
+    setInsights(filteredInsights);
+    saveDataToLocalStorage({ userProfile, financialGoals, personalGoals, insights: filteredInsights, transactions, notifications });
+  };
+
+  const showToast = (toast: Omit<ToastProps, 'id' | 'onClose'>) => {
+    const id = crypto.randomUUID();
+    const newToast: ToastProps = {
+      ...toast,
+      id,
+      onClose: removeToast
+    };
+    setToasts(prev => [...prev, newToast]);
+  };
+
+  const removeToast = (id: string) => {
+    setToasts(prev => prev.filter(toast => toast.id !== id));
+  };
+
   const renderContent = () => {
     if (isLoading && financialGoals.length === 0 && !userProfile) {
       return (
-        <div className="fixed inset-0 bg-background/80 flex flex-col justify-center items-center z-50">
-          <Spinner />
-          <p className="mt-4 text-lg text-muted-foreground font-heading">{loadingMessage}</p>
+        <div className="fixed inset-0 bg-background/90 backdrop-blur-sm flex flex-col justify-center items-center z-50">
+          <div className="bg-card/80 backdrop-blur-md rounded-2xl p-8 shadow-2xl border border-border-glass max-w-sm mx-4">
+            <div className="flex flex-col items-center">
+              <Spinner />
+              <p className="mt-6 text-lg text-foreground font-heading text-center leading-relaxed">{loadingMessage}</p>
+            </div>
+          </div>
         </div>
       );
     }
@@ -523,9 +572,13 @@ const App: React.FC = () => {
     return (
       <>
         {isLoading && (
-          <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex flex-col justify-center items-center z-50 transition-opacity duration-300">
-            <Spinner />
-            <p className="mt-4 text-lg text-muted-foreground font-heading">{loadingMessage}</p>
+          <div className="fixed inset-0 bg-background/90 backdrop-blur-sm flex flex-col justify-center items-center z-50 transition-opacity duration-300">
+            <div className="bg-card/80 backdrop-blur-md rounded-2xl p-8 shadow-2xl border border-border-glass max-w-sm mx-4 animate-modal-in">
+              <div className="flex flex-col items-center">
+                <Spinner />
+                <p className="mt-6 text-lg text-foreground font-heading text-center leading-relaxed">{loadingMessage}</p>
+              </div>
+            </div>
           </div>
         )}
         <div className="flex min-h-screen bg-background text-foreground font-sans">
@@ -586,6 +639,7 @@ const App: React.FC = () => {
                   onAddCustomTask={handleAddCustomTask}
                   onToggleTaskCompletion={handleToggleTaskCompletion}
                   onDeleteTask={handleDeleteTask}
+                  showToast={showToast}
                 />
               )}
               {activeView === 'goals' && (
@@ -607,11 +661,14 @@ const App: React.FC = () => {
                 <InsightsPage
                   insights={insights}
                   onFilterChange={setCurrentInsightsFilter}
+                  onClearAllInsights={handleClearAllInsights}
+                  onClearInsightsByType={handleClearInsightsByType}
                 />
               )}
             </main>
           </div>
         </div>
+        <ToastContainer toasts={toasts} onClose={removeToast} />
       </>
     )
   }

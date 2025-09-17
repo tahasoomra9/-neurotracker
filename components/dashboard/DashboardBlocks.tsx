@@ -449,14 +449,23 @@ const TaskItem: React.FC<{
   onToggleCompletion: () => void;
   onDelete: () => void;
 }> = ({ task, isReadOnly, onToggleCompletion, onDelete }) => {
-  const handleToggleCompletion = (e: React.MouseEvent | React.KeyboardEvent) => {
-    if (!isReadOnly) {
-      onToggleCompletion();
+  const [isCompleting, setIsCompleting] = useState(false);
+
+  const handleToggleCompletion = async (e: React.MouseEvent | React.KeyboardEvent) => {
+    if (!isReadOnly && !isCompleting) {
+      setIsCompleting(true);
+      // Add a small delay for visual feedback
+      setTimeout(() => {
+        onToggleCompletion();
+        setIsCompleting(false);
+      }, 150);
     }
   };
 
   return (
-    <div className={`group bg-card/80 rounded-lg transition-colors duration-200 ${task.completed ? 'bg-card/50' : 'hover:bg-card'}`}>
+    <div className={`group bg-card/80 rounded-lg transition-all duration-200 hover:shadow-md ${
+      task.completed ? 'bg-card/50 border border-success/20' : 'hover:bg-card border border-transparent hover:border-border'
+    } ${isCompleting ? 'animate-pulse-success' : ''}`}>
       <div className="flex items-start p-4 gap-4">
         {/* Checkbox */}
         <div
@@ -470,43 +479,57 @@ const TaskItem: React.FC<{
               handleToggleCompletion(e);
             }
           }}
-          className={`group relative flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center mt-0.5
-            ${task.completed ? 'bg-brand' : 'bg-transparent border-2 border-input group-hover:border-brand/50'}
-            ${isReadOnly ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`
+          className={`group relative flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center mt-0.5 transition-all duration-200
+            ${task.completed 
+              ? 'bg-success text-success-foreground shadow-md' 
+              : 'bg-transparent border-2 border-input group-hover:border-brand/50 hover:bg-brand/5'
+            }
+            ${isReadOnly ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:scale-105'}
+            ${isCompleting ? 'scale-110' : ''}
+            focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2`
           }
+          aria-label={`${task.completed ? 'Mark as incomplete' : 'Mark as complete'}: ${task.description}`}
         >
-          {task.completed && (
-            <svg className="w-4 h-4 text-brand-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+          {isCompleting ? (
+            <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full" />
+          ) : task.completed ? (
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
-          )}
+          ) : null}
         </div>
 
-        {/* Task Title (full text) */}
+        {/* Task Title */}
         <div className="flex-1 min-w-0">
-          <p className={`${task.completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+          <p className={`transition-all duration-200 ${
+            task.completed 
+              ? 'line-through text-muted-foreground' 
+              : 'text-foreground group-hover:text-foreground'
+          }`}>
             {task.description}
           </p>
-           {task.isCustom && (
-            <span className="mt-2 inline-block text-xs font-semibold text-brand/80 bg-brand/10 px-1.5 py-0.5 rounded-full">
-              Custom
-            </span>
-          )}
+          <div className="flex items-center gap-2 mt-1">
+            {task.isCustom && (
+              <span className="inline-block text-xs font-semibold text-brand/80 bg-brand/10 px-2 py-0.5 rounded-full">
+                Custom
+              </span>
+            )}
+          </div>
         </div>
 
         {!isReadOnly && (
-            <button
-                onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete();
-                }}
-                className="ml-2 p-1 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
-                aria-label={`Delete task: ${task.description}`}
-            >
-                <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                </svg>
-            </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            className="ml-2 p-2 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all duration-200 opacity-0 group-hover:opacity-100 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-destructive focus:ring-offset-2"
+            aria-label={`Delete task: ${task.description}`}
+          >
+            <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
+          </button>
         )}
       </div>
     </div>
@@ -555,11 +578,49 @@ export const WeeklyTasksBlock: React.FC<{
     const renderContent = () => {
         if (activeGoals.length === 0) {
             return (
-                 <div className="flex-1 flex flex-col items-center justify-center text-center p-6 min-h-[300px]">
-                    <h4 className="font-semibold text-lg text-foreground">Welcome to NeuroTracker</h4>
-                    <p className="text-sm text-muted-foreground mt-2 max-w-md">
-                        To get started, create your first Financial and Personal goals. Our AI will help you build a realistic plan to achieve them.
+                <div className="flex-1 flex flex-col items-center justify-center text-center p-8 min-h-[400px]">
+                    <div className="w-20 h-20 bg-gradient-to-br from-brand/20 to-brand/40 rounded-full flex items-center justify-center mb-6">
+                        <svg className="w-10 h-10 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                        </svg>
+                    </div>
+                    <h4 className="font-heading text-2xl text-foreground mb-3">Welcome to NeuroTracker</h4>
+                    <p className="text-muted-foreground mb-6 max-w-lg leading-relaxed">
+                        Transform your dreams into achievable goals with AI-powered guidance. Create your first financial and personal goals to get started on your journey.
                     </p>
+                    <div className="flex flex-col sm:flex-row gap-3 w-full max-w-sm">
+                        <Button 
+                            onClick={() => {/* This will be handled by parent component */}} 
+                            className="flex-1"
+                            size="lg"
+                        >
+                            🎯 Create First Goal
+                        </Button>
+                    </div>
+                    <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-md text-sm">
+                        <div className="flex items-center gap-3 p-3 bg-card/50 rounded-lg">
+                            <div className="w-8 h-8 bg-brand/20 rounded-full flex items-center justify-center">
+                                <svg className="w-4 h-4 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                                </svg>
+                            </div>
+                            <div>
+                                <p className="font-semibold text-foreground">Financial Goals</p>
+                                <p className="text-muted-foreground text-xs">Save for what matters</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3 p-3 bg-card/50 rounded-lg">
+                            <div className="w-8 h-8 bg-success/20 rounded-full flex items-center justify-center">
+                                <svg className="w-4 h-4 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <p className="font-semibold text-foreground">Personal Goals</p>
+                                <p className="text-muted-foreground text-xs">Grow your skills</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             )
         }

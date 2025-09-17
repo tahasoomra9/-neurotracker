@@ -31,7 +31,7 @@
         --secondary-foreground: hsl(210, 40%, 98%);
         
         --muted: hsl(0, 0%, 10%);
-        --muted-foreground: hsl(215, 20%, 65%);
+        --muted-foreground: hsl(215, 20%, 70%);
         
         --accent: hsl(0, 0%, 12%);
         --accent-foreground: hsl(210, 40%, 98%);
@@ -45,6 +45,7 @@
         --ring: hsl(260, 85%, 70%);
 
         --success: hsl(142, 71%, 45%);
+        --success-foreground: hsl(210, 40%, 98%);
         --warning: hsl(48, 96%, 53%);
         
         /* Chart Colors */
@@ -87,6 +88,7 @@
         --ring: hsl(260, 85%, 55%);
 
         --success: hsl(142, 61%, 40%);
+        --success-foreground: hsl(0, 0%, 100%);
         --warning: hsl(38, 92%, 56%);
         
         /* Chart Colors */
@@ -111,6 +113,46 @@
       }
       .animate-modal-in {
         animation: modal-in 0.3s ease-out forwards;
+      }
+
+      @keyframes fade-in {
+        from {
+          opacity: 0;
+          transform: translateY(4px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .animate-fade-in {
+        animation: fade-in 0.2s ease-out forwards;
+      }
+
+      @keyframes pulse-success {
+        0%, 100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+        50% {
+          transform: scale(1.05);
+          opacity: 0.8;
+        }
+      }
+      .animate-pulse-success {
+        animation: pulse-success 0.6s ease-in-out;
+      }
+
+      @keyframes shimmer {
+        0% {
+          transform: translateX(-100%);
+        }
+        100% {
+          transform: translateX(100%);
+        }
+      }
+      .animate-shimmer {
+        animation: shimmer 2s infinite;
       }
 
       /* Accessibility: Reduced Motion */
@@ -200,6 +242,43 @@
         overflow: hidden;
       }
 
+      /* Remove all focus outlines and rings */
+      *:focus,
+      *:focus-visible,
+      *:focus-within {
+        outline: none !important;
+        box-shadow: none !important;
+        border-color: inherit !important;
+      }
+
+      /* Override all Tailwind focus classes */
+      [class*="focus:"]:focus,
+      [class*="focus-visible:"]:focus-visible,
+      [class*="focus-within:"]:focus-within {
+        outline: none !important;
+        box-shadow: none !important;
+        border-color: inherit !important;
+      }
+
+      /* Specific overrides for common focus classes */
+      .focus\:outline-none:focus,
+      .focus\:ring-1:focus,
+      .focus\:ring-2:focus,
+      .focus\:ring-ring:focus,
+      .focus\:ring-brand:focus,
+      .focus\:ring-destructive:focus,
+      .focus\:ring-offset-2:focus,
+      .focus\:border-ring:focus,
+      .focus-visible\:outline-none:focus-visible,
+      .focus-visible\:ring-1:focus-visible,
+      .focus-visible\:ring-2:focus-visible,
+      .focus-visible\:ring-ring:focus-visible,
+      .focus-visible\:ring-offset-2:focus-visible {
+        outline: none !important;
+        box-shadow: none !important;
+        border-color: inherit !important;
+      }
+
     </style>
     <script>
       tailwind.config = {
@@ -250,6 +329,7 @@
               },
               success: {
                 DEFAULT: 'var(--success)',
+                foreground: 'var(--success-foreground)',
               },
               warning: {
                 DEFAULT: 'var(--warning)',
@@ -265,6 +345,9 @@
             },
             boxShadow: {
               'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
+            },
+            scale: {
+              '102': '1.02',
             }
           }
         }

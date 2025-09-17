@@ -59,7 +59,7 @@ const NotificationPopover: React.FC<NotificationPopoverProps> = ({ notifications
     const hasReadNotifications = notifications.some(n => n.read);
     
     return (
-        <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-popover rounded-lg border border-border shadow-lg z-20 animate-modal-in overflow-hidden flex flex-col">
+        <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-popover rounded-lg border border-border shadow-lg z-50 animate-modal-in overflow-hidden flex flex-col">
             <div className="flex justify-between items-center p-3 border-b border-border flex-shrink-0">
                 <h3 className="font-semibold text-foreground">Notifications</h3>
                 <Button variant="ghost" className="text-xs px-2 py-1 h-auto" onClick={onMarkAllAsRead}>Mark all as read</Button>

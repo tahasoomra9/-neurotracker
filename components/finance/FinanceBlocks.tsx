@@ -11,8 +11,12 @@ ChartJS.register(ArcElement, Tooltip, Legend);
 // ===================================
 // Block Container
 // ===================================
-const BlockContainer: React.FC<{ children: React.ReactNode; className?: string; }> = ({ children, className }) => (
-    <div className={`premium-glass p-5 text-foreground flex flex-col ${className}`}>
+const BlockContainer: React.FC<{ 
+    children: React.ReactNode; 
+    className?: string; 
+    style?: React.CSSProperties;
+}> = ({ children, className, style }) => (
+    <div className={`premium-glass p-5 text-foreground flex flex-col ${className}`} style={style}>
         {children}
     </div>
 );
@@ -101,12 +105,12 @@ const ActionMenu: React.FC<{
     const actions = status === 'active' ? menuItems.active : status === 'paused' ? menuItems.paused : [];
 
     return (
-        <div className="relative" ref={menuRef}>
+        <div className="relative z-50" ref={menuRef} style={{ overflow: 'visible' }}>
             <button onClick={() => setIsOpen(!isOpen)} className="p-2 rounded-full hover:bg-accent text-muted-foreground hover:text-foreground">
                 <KebabIcon />
             </button>
             {isOpen && (
-                <div className="absolute right-0 top-10 w-48 bg-popover rounded-md shadow-lg z-10 border border-border p-1 animate-modal-in">
+                <div className="absolute right-0 top-10 w-48 bg-popover rounded-md shadow-lg z-50 border border-border p-1 animate-modal-in">
                     {actions.map(item => (
                         <button key={item.action} onClick={() => { onAction(item.action as ActionType); setIsOpen(false); }} className="w-full flex items-center px-3 py-2 text-sm text-foreground hover:bg-accent rounded-md">
                             {item.icon} {item.label}
@@ -202,7 +206,7 @@ export const AllFinancialGoalsBlock: React.FC<{
     }, [goals, filter]);
 
     return (
-        <BlockContainer className="min-h-[300px]">
+        <BlockContainer className="min-h-[300px]" style={{ overflow: 'visible' }}>
             <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-heading text-foreground">Financial Goals</h3>
                 <Button onClick={onAddNew} variant="secondary" className="text-xs px-3 py-1.5">+ Add New Goal</Button>

@@ -24,6 +24,7 @@ interface DashboardProps {
   onAddCustomTask: (goalId: string, taskDescription: string) => void;
   onToggleTaskCompletion: (goalId: string, taskId: string) => void;
   onDeleteTask: (goalId: string, taskId: string) => void;
+  showToast: (toast: { type: 'success' | 'error' | 'warning' | 'info'; title: string; message?: string; duration?: number }) => void;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ 
@@ -37,7 +38,8 @@ const Dashboard: React.FC<DashboardProps> = ({
   onToggleGoalStatus,
   onAddCustomTask,
   onToggleTaskCompletion,
-  onDeleteTask
+  onDeleteTask,
+  showToast
 }) => {
   const [goalForCheckin, setGoalForCheckin] = useState<{ financialGoal: FinancialGoal, personalGoals: PersonalGoal[]} | null>(null);
   const [isFinancialSetupOpen, setIsFinancialSetupOpen] = useState(false);
@@ -60,7 +62,12 @@ const Dashboard: React.FC<DashboardProps> = ({
     const activePersonalGoals = personalGoals.filter(g => g.status === 'active');
 
     if (!activeFinancialGoal || activePersonalGoals.length === 0) {
-        alert("You need at least one active financial and personal goal to start a check-in.");
+        showToast({
+          type: 'warning',
+          title: 'Cannot Start Check-in',
+          message: 'You need at least one active financial and personal goal to start a check-in.',
+          duration: 5000
+        });
         return;
     }
 
@@ -69,7 +76,12 @@ const Dashboard: React.FC<DashboardProps> = ({
     if (activePersonalGoals.length > 0) {
       setGoalForCheckin({ financialGoal: activeFinancialGoal, personalGoals: activePersonalGoals });
     } else {
-       alert("An unexpected error occurred. Could not find goals for check-in.");
+       showToast({
+         type: 'error',
+         title: 'Check-in Error',
+         message: 'An unexpected error occurred. Could not find goals for check-in.',
+         duration: 5000
+       });
     }
   };
 
