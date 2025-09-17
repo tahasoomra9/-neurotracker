@@ -577,7 +577,15 @@ const App: React.FC = () => {
           </div>
         )}
         <div className={`flex min-h-screen text-foreground font-sans relative ${performanceMode ? 'bg-black' : ''}`}>
-          {!performanceMode && <DarkVeilBackground className="fixed inset-0 -z-10 opacity-30" />}
+          {!performanceMode && <DarkVeilBackground
+            className="fixed inset-0 -z-10 opacity-30"
+            hueShift={-10}
+            scanlineIntensity={0}
+            scanlineFrequency={0}
+            noiseIntensity={0}
+            warpAmount={1}
+            speed={0.5}
+          />}
           <Sidebar
             onLogout={handleReset}
             isOpen={isSidebarOpen}
