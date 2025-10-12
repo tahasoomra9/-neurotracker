@@ -1,14 +1,16 @@
-# NeuroTracker Desktop
+# Neurotracker Desktop App
 
-A modern desktop application for neural activity tracking and cognitive assessment, built with Electron and React.
+A modern desktop application for personal progress and financial tracking, built with Electron and React.
 
 ## Features
 
-- **Cross-platform desktop application** - Runs on Windows, macOS, and Linux
-- **Modern React interface** - Built with React 19 and TypeScript
-- **AI-powered analysis** - Integrated with Google's Gemini AI
-- **Real-time tracking** - Monitor and analyze neural patterns
-- **Secure data handling** - Local storage with encrypted API communications
+- **Goal-based skill and habit tracking** - Set skills or habits you want to master, and the app generates AI-assisted plans based on your experience level.
+- **Customizable AI plans** - Modify or remove any suggested steps or tasks you don’t want to follow.
+- **Integrated finance tracker** - Track expenses, savings, and planned purchases with ease.
+- **Smart saving goals** - Enter items you want to buy, set your total saving timeline, and the app calculates how much to save each month.
+- **Visual progress insights** - Monitor growth and financial progress through dynamic charts and diagrams.
+- **Work in progress** - The project is actively evolving, with more advanced features planned for future updates.
+
 
 ## Prerequisites
 
