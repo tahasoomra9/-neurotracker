@@ -1,4 +1,4 @@
-```
+
 # NeuroTracker (WIP)
 
 **A productivity and financial-planning desktop app that turns your goals into clear, actionable weekly tasks.**
@@ -87,7 +87,7 @@ neurotracker/
 ├── public/             # Static assets
 ├── package.json        # Dependencies and scripts
 └── README.md           # Project documentation
-```
+
 
 ---
 
