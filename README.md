@@ -54,9 +54,8 @@ A proactive approach to saving money based on weekly behavior.
 | **Goal Breakdown Logic** | ✔ Ready |
 | **Finance Tracker** | ✔ Ready |
 | **Local Data Storage** | ✔ Ready |
-| **AI-Powered Breakdown System** | ❗ WIP |
 | **Gamification (Streaks, XP)** | ❗ WIP |
-| **Visual Dashboards** | ❗ WIP |
+| **Visual Improvements** | ❗ WIP |
 | **Data Import/Export** | ❗ Planned |
 | **Offline Mode** | ❗ Planned |
 
