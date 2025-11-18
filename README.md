@@ -74,7 +74,7 @@ A proactive approach to saving money based on weekly behavior.
 
 ## Project Structure
 
-```text
+
 neurotracker/
 │
 ├── app/                # Electron main process configuration
@@ -123,7 +123,7 @@ Compiles the code and builds the executable for your OS.
 ```bash
 npm run build
 npm run electron:build
-```
+
 
 ---
 
