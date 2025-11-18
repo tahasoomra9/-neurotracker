@@ -1,4 +1,3 @@
-
 # NeuroTracker (WIP)
 
 **A productivity and financial-planning desktop app that turns your goals into clear, actionable weekly tasks.**
@@ -17,7 +16,7 @@ Unlike standard planners that just list dates, NeuroTracker creates the steps fo
 
 ## Core Features
 
-### 1. Skill & Goal Breakdown
+### 1. 🧠 Skill & Goal Breakdown
 NeuroTracker turns abstract ambitions into concrete plans.
 
 *   **You Enter:**
@@ -30,7 +29,7 @@ NeuroTracker turns abstract ambitions into concrete plans.
     *   Adapts tasks based on difficulty, time constraints, and user progress.
     *   Tracks streaks, milestones, and learning momentum.
 
-### 2. Finance & Savings Planner
+### 2. 💰 Finance & Savings Planner
 A proactive approach to saving money based on weekly behavior.
 
 *   **You Enter:**
@@ -55,8 +54,9 @@ A proactive approach to saving money based on weekly behavior.
 | **Goal Breakdown Logic** | ✔ Ready |
 | **Finance Tracker** | ✔ Ready |
 | **Local Data Storage** | ✔ Ready |
+| **AI-Powered Breakdown System** | ❗ WIP |
 | **Gamification (Streaks, XP)** | ❗ WIP |
-| **Visual Improvements** | ❗ WIP |
+| **Visual Dashboards** | ❗ WIP |
 | **Data Import/Export** | ❗ Planned |
 | **Offline Mode** | ❗ Planned |
 
@@ -74,7 +74,7 @@ A proactive approach to saving money based on weekly behavior.
 
 ## Project Structure
 
-
+```text
 neurotracker/
 │
 ├── app/                # Electron main process configuration
@@ -86,7 +86,7 @@ neurotracker/
 ├── public/             # Static assets
 ├── package.json        # Dependencies and scripts
 └── README.md           # Project documentation
-
+```
 
 ---
 
@@ -101,7 +101,7 @@ neurotracker/
 
 1.  Clone the repository:
     ```bash
-    git clone https://github.com/tahasoomra9/neurotracker.git
+    git clone https://github.com/yourusername/neurotracker.git
     cd neurotracker
     ```
 
@@ -123,7 +123,7 @@ Compiles the code and builds the executable for your OS.
 ```bash
 npm run build
 npm run electron:build
-
+```
 
 ---
 
