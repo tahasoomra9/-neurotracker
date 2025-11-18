@@ -1,85 +1,160 @@
-# Neurotracker Desktop App
+Here is the converted content formatted as a clean, professional `README.md` file. You can copy and paste this directly into your project.
 
-A modern desktop application for personal progress and financial tracking, built with Electron and React.
+```markdown
+# NeuroTracker (WIP)
 
-## Features
+**A productivity and financial-planning desktop app that turns your goals into clear, actionable weekly tasks.**
 
-- **Goal-based skill and habit tracking** - Set skills or habits you want to master, and the app generates AI-assisted plans based on your experience level.
-- **Customizable AI plans** - Modify or remove any suggested steps or tasks you don’t want to follow.
-- **Integrated finance tracker** - Track expenses, savings, and planned purchases with ease.
-- **Smart saving goals** - Enter items you want to buy, set your total saving timeline, and the app calculates how much to save each month.
-- **Visual progress insights** - Monitor growth and financial progress through dynamic charts and diagrams.
-- **Work in progress** - The project is actively evolving, with more advanced features planned for future updates.
+![Status](https://img.shields.io/badge/Status-Work_In_Progress-yellow)
+![License](https://img.shields.io/badge/License-MIT-blue)
+![Tech](https://img.shields.io/badge/Built_With-Electron_%7C_React_%7C_TypeScript-blueviolet)
 
+## Overview
 
-## Prerequisites
+NeuroTracker is a desktop application built with **TypeScript**, **React**, and **Electron**. It is designed to act as a minimalistic "life OS," helping users organize their lives across two major areas: Skill Acquisition and Financial Planning.
 
-- Node.js (v16 or higher)
-- npm or yarn package manager
+Unlike standard planners that just list dates, NeuroTracker creates the steps for you—breaking down learning curves and savings goals into manageable weekly chunks.
 
-## Installation
+---
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/tahasoomra9/-neurotracker.git
-   cd neurotracker
-   ```
+## Core Features
 
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+### 1. Skill & Goal Breakdown
+NeuroTracker turns abstract ambitions into concrete plans.
 
-3. Set up environment variables:
-   ```bash
-   cp .env.example .env.local
-   ```
-   Edit `.env.local` and add your Gemini API key.
+*   **You Enter:**
+    *   A skill you want to learn (e.g., Programming, Drawing, Machine Learning, Guitar).
+    *   Your current skill level.
+    *   Your target level or specific goal.
+*   **NeuroTracker Then:**
+    *   Breaks the skill into small, realistic, progression-based steps.
+    *   Generates specific weekly plans and tasks.
+    *   Adapts tasks based on difficulty, time constraints, and user progress.
+    *   Tracks streaks, milestones, and learning momentum.
 
-## Development
+### 2. Finance & Savings Planner
+A proactive approach to saving money based on weekly behavior.
 
-Start the development server:
+*   **You Enter:**
+    *   Your monthly income (salary, rent, side gigs, etc.).
+    *   Your monthly expenses.
+    *   A savings goal (e.g., £2000 for a PC build, rent deposit, travel fund).
+*   **NeuroTracker Then:**
+    *   Calculates exactly how much you need to save each week.
+    *   Converts your saving plan into actionable weekly "financial tasks."
+    *   Shows real-time progress towards your goal.
+    *   Alerts you when spending habits threaten the plan.
+    *   Allows for flexible adjustments at any time.
+
+---
+
+## Feature Status
+
+| Feature | Status |
+| :--- | :--- |
+| **Desktop App Shell (Electron)** | ✔ Ready |
+| **Weekly Task Generator** | ✔ Ready |
+| **Goal Breakdown Logic** | ✔ Ready |
+| **Finance Tracker** | ✔ Ready |
+| **Local Data Storage** | ✔ Ready |
+| **Gamification (Streaks, XP)** | ❗ WIP |
+| **Data Import/Export** | ❗ Planned |
+| **Offline Mode** | ❗ Planned |
+
+---
+
+## Tech Stack
+
+*   **[Electron](https://www.electronjs.org/)**: Desktop application shell.
+*   **[React](https://reactjs.org/)**: User Interface library.
+*   **[TypeScript](https://www.typescriptlang.org/)**: For type-safe, maintainable code.
+*   **Vite / Webpack**: Build tooling.
+*   **LocalStorage / IndexedDB**: Data persistence (File storage WIP).
+
+---
+
+## Project Structure
+
+```text
+neurotracker/
+│
+├── app/                # Electron main process configuration
+├── src/                # React frontend source code
+│   ├── components/     # Reusable UI components
+│   ├── hooks/          # Custom React hooks
+│   ├── pages/          # Application views/routes
+│   └── utils/          # Helper functions and logic
+├── public/             # Static assets
+├── package.json        # Dependencies and scripts
+└── README.md           # Project documentation
+```
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+*   **Node.js** (v18 or higher)
+*   **npm** or **yarn**
+
+### Installation
+
+1.  Clone the repository:
+    ```bash
+    git clone https://github.com/tahasoomra9/neurotracker.git
+    cd neurotracker
+    ```
+
+2.  Install dependencies:
+    ```bash
+    npm install
+    ```
+
+### Usage
+
+**Run in development mode:**
+Starts the React dev server and the Electron window.
 ```bash
 npm run dev
 ```
 
-This will start both the Vite dev server and Electron application.
-
-## Building
-
-Create a production build:
+**Build the application:**
+Compiles the code and builds the executable for your OS.
 ```bash
-npm run build-exe
+npm run build
+npm run electron:build
 ```
 
-The built application will be available in the `dist` directory.
+---
 
-## Project Structure
+## Why NeuroTracker?
 
-```
-├── electron/          # Electron main process files
-├── src/              # React application source
-├── components/       # Reusable UI components
-├── services/         # API and data services
-├── assets/           # Static assets and icons
-└── examples/         # Usage examples and demos
-```
+Most planners tell you *what* to do. NeuroTracker helps you figure out *how* to do it.
 
-## Technologies Used
+It is built as a long-term, minimalistic system for people who want:
+*   **Clarity** on their path forward.
+*   **Progress** measurable in weekly steps.
+*   **Consistency** via habit tracking.
+*   **Automation** of the planning process.
 
-- **Electron** - Desktop application framework
-- **React 19** - User interface library
-- **TypeScript** - Type-safe JavaScript
-- **Vite** - Fast build tool and dev server
-- **Google Gemini AI** - AI analysis capabilities
+---
 
-## Contributing
+## Roadmap
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
+The project is actively in development. The current focus is on integrating the AI engine for smarter task generation.
+
+- [ ] **AI-based breakdown engine** (Integration with LLMs for dynamic task creation)
+- [ ] **XP & Achievement System** (Gamify the productivity experience)
+- [ ] **Financial Graphing** (Visual representations of savings vs. expenses)
+- [ ] **Drag-and-drop Weekly Planner** (Better UI for task management)
+- [ ] **Dark Mode** (Full UI theming)
+- [ ] **Cloud Sync** (Optional cross-device synchronization)
+- [ ] **CI/CD & Testing** (Robust testing suite)
+
+---
 
 ## License
 
-This project is private and proprietary.
+Distributed under the **MIT License**. See `LICENSE` for more information.
+```
